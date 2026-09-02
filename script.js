@@ -1,17 +1,23 @@
 document.addEventListener("DOMContentLoaded", function() {
     const buyCalculator = document.querySelector("#buy-calculator");
-    const marketValueInput = document.querySelector("#mkt-value");
-    const percentageBtns = document.querySelectorAll(".percentage-btn");
+    const buyMarketValueInput = document.querySelector("#buy-mkt-value");
+    const buyPercentageBtns = document.querySelectorAll(".buy-percentage-btn");
     const buyPercentageInput = document.querySelector("#buy-pct");
-    const offerDisplay = document.querySelector("#offer");
+    const buyOfferDisplay = document.querySelector("#buy-offer");
+
+    const tradeCalculator = document.querySelector("#trade-calculator");
+    const tradeMarketValueInput = document.querySelector("#trade-mkt-value");
+    const tradePercentageBtns = document.querySelectorAll(".trade-percentage-btn");
+    const tradePercentageInput = document.querySelector("#trade-pct");
+    const tradeOfferDisplay = document.querySelector("#trade-offer");
 
     function calculateBuyOffer() {
-        if (marketValueInput.value === "" || buyPercentageInput.value === "") {
+        if (buyMarketValueInput.value === "" || buyPercentageInput.value === "") {
             return;
         }
 
-        let marketValue = Number(marketValueInput.value);
-        if (marketValue < 0) {
+        let buyMarketValue = Number(buyMarketValueInput.value);
+        if (buyMarketValue < 0) {
             return;
         }
 
@@ -20,14 +26,34 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
 
-        let cashOffer = marketValue * buyPercentage
+        let cashOffer = buyMarketValue * buyPercentage;
 
-        offerDisplay.textContent = `$${cashOffer.toFixed(2)}`
+        buyOfferDisplay.textContent = `$${cashOffer.toFixed(2)}`;
     }
 
-    percentageBtns.forEach(button => {
+    function calculateTradeOffer() {
+        if (tradeMarketValueInput.value === "" || tradePercentageInput.value === "") {
+            return;
+        }
+
+        let tradeMarketValue = Number(tradeMarketValueInput.value);
+        if (tradeMarketValue < 0) {
+            return;
+        }
+
+        let tradePercentage = Number(tradePercentageInput.value) / 100;
+        if (tradePercentage < 0 || tradePercentage > 1) {
+            return;
+        }
+
+        let tradeOffer = tradeMarketValue * tradePercentage;
+
+        tradeOfferDisplay.textContent = `$${tradeOffer.toFixed(2)}`;
+    }
+
+    buyPercentageBtns.forEach(button => {
         button.addEventListener("click", (event) => {
-            percentageBtns.forEach(btn => {
+            buyPercentageBtns.forEach(btn => {
                 btn.classList.remove("selected-percentage");                    
             })
 
@@ -39,20 +65,52 @@ document.addEventListener("DOMContentLoaded", function() {
         })
     })
 
-    marketValueInput.addEventListener("input", () => {
+    buyMarketValueInput.addEventListener("input", () => {
         calculateBuyOffer();
     })
 
     buyPercentageInput.addEventListener("input", () => {
-        percentageBtns.forEach(button => {
+        buyPercentageBtns.forEach(button => {
             button.classList.remove("selected-percentage");
-            calculateBuyOffer();
         })
+        calculateBuyOffer();        
     })
 
     buyCalculator.addEventListener("submit", function(event) {
         event.preventDefault();
 
         calculateBuyOffer();
+    })
+
+    tradePercentageBtns.forEach(button => {
+        button.addEventListener("click", (event) => {
+            tradePercentageBtns.forEach(btn => {
+                btn.classList.remove("selected-percentage");
+            })
+
+            const percentage = event.target.dataset.percentage;
+            button.classList.add("selected-percentage");
+            tradePercentageInput.value = percentage;
+
+            calculateTradeOffer();
+        })
+    })
+
+    tradeMarketValueInput.addEventListener("input", () => {
+        calculateTradeOffer();
+    })
+
+    tradePercentageInput.addEventListener("input", () => {
+        tradePercentageBtns.forEach(button => {
+            button.classList.remove("selected-percentage");
+        })
+        
+        calculateTradeOffer();
+    })
+
+    tradeCalculator.addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        calculateTradeOffer();
     })
 })
