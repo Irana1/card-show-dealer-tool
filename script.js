@@ -22,6 +22,16 @@ document.addEventListener("DOMContentLoaded", function() {
     const pricingMarketValueInput = document.querySelector("#pricing-mkt-value");
     const suggestedPriceDisplay = document.querySelector("#suggested-price-span");
 
+    const collectionBuyEvaluator = document.querySelector("#collection-buy-evaluator");
+    const cardNameInput = document.querySelector("#card-name");
+    const cardMarketValueInput = document.querySelector("#card-mkt-value");
+    const addedCardsContainer = document.querySelector("#added-cards-container");
+    const totalMarketValueDisplay = document.querySelector("#total-market-value-span");
+
+    // Arrays
+
+    let collectionCards = []
+
     // Functions
 
     function calculateBuyOffer() {
@@ -120,6 +130,16 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+    function renderCollectionCards() {
+        addedCardsContainer.innerHTML = "";
+
+        collectionCards.forEach(card => {
+            const cardSpan = document.createElement("span");
+            cardSpan.textContent = `${card.name} - $${card.marketValue.toFixed(2)}`;
+            addedCardsContainer.appendChild(cardSpan);
+        })
+    }
+
     // Buy Calculator
 
     buyPercentageBtns.forEach(button => {
@@ -213,5 +233,33 @@ document.addEventListener("DOMContentLoaded", function() {
         event.preventDefault();
 
         calculateSuggestedPrice();
+    })
+
+    // Collection Buy Evaluator
+
+    collectionBuyEvaluator.addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        let cardName = cardNameInput.value.trim();
+        let cardMarketValue = Number(cardMarketValueInput.value);
+
+        if (cardName === "" || cardMarketValueInput.value === "") {
+            return;
+        }
+
+        if (cardMarketValue < 0) {
+            return;
+        }
+
+        let card = {
+            name: cardName,
+            marketValue: cardMarketValue
+        }
+
+        collectionCards.push(card);
+
+        console.log(collectionCards);
+
+        renderCollectionCards();
     })
 })
