@@ -11,6 +11,13 @@ document.addEventListener("DOMContentLoaded", function() {
     const tradePercentageInput = document.querySelector("#trade-pct");
     const tradeOfferDisplay = document.querySelector("#trade-offer");
 
+    const profitCalculator = document.querySelector("#profit-calculator");
+    const purchaseCostInput = document.querySelector("#purchase-cost");
+    const salePriceInput = document.querySelector("#sale-price");
+    const profitDisplay = document.querySelector("#profit-span");
+    const profitMarginDisplay = document.querySelector("#profit-margin-span");
+    const roiDisplay = document.querySelector("#roi-span");
+
     function calculateBuyOffer() {
         if (buyMarketValueInput.value === "" || buyPercentageInput.value === "") {
             return;
@@ -49,6 +56,39 @@ document.addEventListener("DOMContentLoaded", function() {
         let tradeOffer = tradeMarketValue * tradePercentage;
 
         tradeOfferDisplay.textContent = `$${tradeOffer.toFixed(2)}`;
+    }
+
+    function calculateProfit() {
+        if (purchaseCostInput.value === "" || salePriceInput.value === "") {
+            return;
+        }
+
+        let purchaseCost = Number(purchaseCostInput.value);
+        if (purchaseCost < 0) {
+            return;
+        }
+
+        let salePrice = Number(salePriceInput.value);
+        if (salePrice < 0) {
+            return;
+        }
+
+        let profit = salePrice - purchaseCost;
+        profitDisplay.textContent = `$${profit.toFixed(2)}`;
+
+        if (salePrice === 0) {
+            profitMarginDisplay.textContent = "0.00%";
+        } else {
+            let profitMargin = profit / salePrice * 100;
+            profitMarginDisplay.textContent = `${profitMargin.toFixed(2)}%`;            
+        }
+
+        if (purchaseCost === 0) {
+            roiDisplay.textContent = "0.00%"
+        } else {
+            let roi = profit / purchaseCost * 100;
+            roiDisplay.textContent = `${roi.toFixed(2)}%`;
+        }
     }
 
     buyPercentageBtns.forEach(button => {
@@ -112,5 +152,19 @@ document.addEventListener("DOMContentLoaded", function() {
         event.preventDefault();
 
         calculateTradeOffer();
+    })
+
+    purchaseCostInput.addEventListener("input", () => {
+        calculateProfit();
+    })
+
+    salePriceInput.addEventListener("input", () => {
+        calculateProfit();
+    })
+
+    profitCalculator.addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        calculateProfit();
     })
 })
