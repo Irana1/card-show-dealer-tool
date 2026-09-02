@@ -18,6 +18,12 @@ document.addEventListener("DOMContentLoaded", function() {
     const profitMarginDisplay = document.querySelector("#profit-margin-span");
     const roiDisplay = document.querySelector("#roi-span");
 
+    const pricingCalculator = document.querySelector("#pricing-calculator");
+    const pricingMarketValueInput = document.querySelector("#pricing-mkt-value");
+    const suggestedPriceDisplay = document.querySelector("#suggested-price-span");
+
+    // Functions
+
     function calculateBuyOffer() {
         if (buyMarketValueInput.value === "" || buyPercentageInput.value === "") {
             return;
@@ -91,6 +97,31 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+    function calculateSuggestedPrice() {
+        if (pricingMarketValueInput.value === "") {
+            return;
+        }
+
+        let pricingMarketValue = Number(pricingMarketValueInput.value);
+
+        if (pricingMarketValue < 0) {
+            return;
+        }
+
+        if (pricingMarketValue < 10) {
+            let suggestedPrice = Math.ceil(pricingMarketValue);
+            suggestedPriceDisplay.textContent = `$${suggestedPrice.toFixed(2)}`;
+        } else if (pricingMarketValue <= 100) {
+            let suggestedPrice = (Math.ceil(pricingMarketValue / 5)) * 5;
+            suggestedPriceDisplay.textContent = `$${suggestedPrice.toFixed(2)}`;
+        } else {
+            let suggestedPrice = (Math.ceil(pricingMarketValue / 10)) * 10;
+            suggestedPriceDisplay.textContent = `$${suggestedPrice.toFixed(2)}`;
+        }
+    }
+
+    // Buy Calculator
+
     buyPercentageBtns.forEach(button => {
         button.addEventListener("click", (event) => {
             buyPercentageBtns.forEach(btn => {
@@ -121,6 +152,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
         calculateBuyOffer();
     })
+
+    // Trade Calculator
 
     tradePercentageBtns.forEach(button => {
         button.addEventListener("click", (event) => {
@@ -154,6 +187,8 @@ document.addEventListener("DOMContentLoaded", function() {
         calculateTradeOffer();
     })
 
+    // Purchase Calculator
+
     purchaseCostInput.addEventListener("input", () => {
         calculateProfit();
     })
@@ -166,5 +201,17 @@ document.addEventListener("DOMContentLoaded", function() {
         event.preventDefault();
 
         calculateProfit();
+    })
+
+    // Pricing Tool
+
+    pricingMarketValueInput.addEventListener("input", () => {
+        calculateSuggestedPrice();
+    })
+
+    pricingCalculator.addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        calculateSuggestedPrice();
     })
 })
