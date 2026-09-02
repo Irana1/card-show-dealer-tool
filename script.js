@@ -1,12 +1,11 @@
 document.addEventListener("DOMContentLoaded", function() {
     const buyCalculator = document.querySelector("#buy-calculator");
     const marketValueInput = document.querySelector("#mkt-value");
+    const percentageBtns = document.querySelectorAll(".percentage-btn");
     const buyPercentageInput = document.querySelector("#buy-pct");
     const offerDisplay = document.querySelector("#offer");
 
-    buyCalculator.addEventListener("submit", function(event) {
-        event.preventDefault();
-
+    function calculateBuyOffer() {
         if (marketValueInput.value === "" || buyPercentageInput.value === "") {
             return;
         }
@@ -24,5 +23,25 @@ document.addEventListener("DOMContentLoaded", function() {
         let cashOffer = marketValue * buyPercentage
 
         offerDisplay.textContent = `$${cashOffer.toFixed(2)}`
+    }
+
+    percentageBtns.forEach(button => {
+        button.addEventListener("click", (event) => {
+            percentageBtns.forEach(btn => {
+                btn.classList.remove("selected-percentage");                    
+            })
+
+            const percentage = event.target.dataset.percentage;
+            button.classList.add("selected-percentage")
+            buyPercentageInput.value = percentage;
+
+            calculateBuyOffer();
+        })
+    })    
+
+    buyCalculator.addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        calculateBuyOffer();
     })
 })
