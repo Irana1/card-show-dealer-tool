@@ -27,10 +27,13 @@ document.addEventListener("DOMContentLoaded", function() {
     const cardMarketValueInput = document.querySelector("#card-mkt-value");
     const addedCardsContainer = document.querySelector("#added-cards-container");
     const totalMarketValueDisplay = document.querySelector("#total-market-value-span");
+    const collectionPercentageBtns = document.querySelectorAll(".collection-percentage-btn");
+    const collectionOfferDisplay = document.querySelector("#collection-offer-span");
 
-    // Arrays
+    // Pre-established variables and Arrays
 
     let collectionCards = []
+    let selectedCollectionPercentage = null
 
     // Functions
 
@@ -133,11 +136,45 @@ document.addEventListener("DOMContentLoaded", function() {
     function renderCollectionCards() {
         addedCardsContainer.innerHTML = "";
 
-        collectionCards.forEach(card => {
-            const cardSpan = document.createElement("span");
-            cardSpan.textContent = `${card.name} - $${card.marketValue.toFixed(2)}`;
-            addedCardsContainer.appendChild(cardSpan);
+        collectionCards.forEach((card, index) => {
+            const cardDiv = document.createElement("div");
+            cardDiv.textContent = `${card.name} - $${card.marketValue.toFixed(2)}`;
+
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.type = "button";
+            deleteButton.addEventListener("click", function() {
+                collectionCards.splice(index, 1);
+                renderCollectionCards();
+                calculateCollectionTotal();
+
+                if (selectedCollectionPercentage !== "") {
+                    calculateCollectionOffer(selectedCollectionPercentage);
+                }
+            })
+
+            cardDiv.appendChild(deleteButton)
+            addedCardsContainer.appendChild(cardDiv);
         })
+    }
+
+    function calculateCollectionTotal() {
+        let collectionTotal = 0
+
+        collectionCards.forEach(card => {
+            collectionTotal = collectionTotal + card.marketValue;
+        })
+       
+        totalMarketValueDisplay.textContent = `$${collectionTotal.toFixed(2)}`;
+
+        return collectionTotal;
+    }
+
+    function calculateCollectionOffer(percentageDecimal) {
+        let collectionTotal = calculateCollectionTotal();
+        percentageDecimal = percentageDecimal / 100;
+        let collectionOffer = collectionTotal * percentageDecimal;
+        collectionOfferDisplay.textContent = `$${collectionOffer.toFixed(2)}`;
     }
 
     // Buy Calculator
@@ -261,5 +298,28 @@ document.addEventListener("DOMContentLoaded", function() {
         console.log(collectionCards);
 
         renderCollectionCards();
+        calculateCollectionTotal();
+
+        if (selectedCollectionPercentage !== "") {
+            calculateCollectionOffer(selectedCollectionPercentage);
+        }
+
+        cardNameInput.value = "";
+        cardMarketValueInput.value = "";
+    })
+
+    collectionPercentageBtns.forEach(button => {
+        button.addEventListener("click", (event) => {
+            collectionPercentageBtns.forEach(btn => {
+                btn.classList.remove("selected-percentage");
+            })
+
+            button.classList.add("selected-percentage");
+
+            let percentage = event.target.dataset.percentage;
+            selectedCollectionPercentage = percentage
+
+            calculateCollectionOffer(percentage);
+        })
     })
 })
