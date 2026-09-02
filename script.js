@@ -37,7 +37,18 @@ document.addEventListener("DOMContentLoaded", function() {
 
             calculateBuyOffer();
         })
-    })    
+    })
+
+    marketValueInput.addEventListener("input", () => {
+        calculateBuyOffer();
+    })
+
+    buyPercentageInput.addEventListener("input", () => {
+        percentageBtns.forEach(button => {
+            button.classList.remove("selected-percentage");
+            calculateBuyOffer();
+        })
+    })
 
     buyCalculator.addEventListener("submit", function(event) {
         event.preventDefault();
