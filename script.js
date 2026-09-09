@@ -25,6 +25,9 @@ document.addEventListener("DOMContentLoaded", function() {
     const collectionBuyEvaluator = document.querySelector("#collection-buy-evaluator");
     const cardNameInput = document.querySelector("#card-name");
     const cardMarketValueInput = document.querySelector("#card-mkt-value");
+    const clearCollectionButton = document.querySelector("#clear-collection-button");
+    const collectionSubmitButton = document.querySelector("#collection-submit-button");
+    const cancelEditButton = document.querySelector("#cancel-edit-button");
     const addedCardsContainer = document.querySelector("#added-cards-container");
     const totalMarketValueDisplay = document.querySelector("#total-market-value-span");
     const collectionPercentageBtns = document.querySelectorAll(".collection-percentage-btn");
@@ -39,6 +42,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     let collectionCards = []
     let selectedCollectionPercentage = null
+    let editingCardIndex = null;
     let settings = {
         defaultBuyPercentage: 75,
         defaultTradePercentage: 85,
@@ -208,6 +212,17 @@ document.addEventListener("DOMContentLoaded", function() {
             const cardDiv = document.createElement("div");
             cardDiv.textContent = `${card.name} - $${card.marketValue.toFixed(2)}`;
 
+            const editButton = document.createElement("button");
+            editButton.textContent = "Edit";
+            editButton.type = "button";
+            editButton.addEventListener("click", function() {
+                cardNameInput.value = card.name;
+                cardMarketValueInput.value = card.marketValue;
+                editingCardIndex = index;
+                collectionSubmitButton.textContent = "Update Card";
+                cancelEditButton.hidden = false;
+            })
+
             const deleteButton = document.createElement("button");
             deleteButton.textContent = "Delete";
             deleteButton.type = "button";
@@ -222,7 +237,16 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             })
 
-            cardDiv.appendChild(deleteButton)
+            cancelEditButton.addEventListener("click", function() {
+                editingCardIndex = null;
+                cardNameInput.value = "";
+                cardMarketValueInput.value = "";
+                collectionSubmitButton.textContent = "Add Card";
+                cancelEditButton.hidden = true;
+            })
+
+            cardDiv.appendChild(editButton);
+            cardDiv.appendChild(deleteButton);
             addedCardsContainer.appendChild(cardDiv);
         })
     }
@@ -376,9 +400,16 @@ document.addEventListener("DOMContentLoaded", function() {
             marketValue: cardMarketValue
         }
 
-        collectionCards.push(card);
+        if (editingCardIndex !== null) {
+            collectionCards[editingCardIndex] = card
+        } else {
+            collectionCards.push(card); 
+        }
         localStorage.setItem("collectionCards", JSON.stringify(collectionCards));
-
+        editingCardIndex = null;
+        collectionSubmitButton.textContent = "Add Card";
+        cancelEditButton.hidden = true
+        
         renderCollectionCards();
         calculateCollectionTotal();
 
@@ -403,6 +434,27 @@ document.addEventListener("DOMContentLoaded", function() {
 
             calculateCollectionOffer(percentage);
         })
+    })
+
+    clearCollectionButton.addEventListener("click", () => {
+        const confirmed = confirm("Are you sure you want to clear the collection?");
+        if (!confirmed) {
+            return;
+        }
+
+        collectionCards = [];
+
+        localStorage.setItem("collectionCards", JSON.stringify(collectionCards));
+        collectionOfferDisplay.textContent = "$0.00";
+
+        editingCardIndex = null;
+        collectionSubmitButton.textContent = "Add Card";
+        cancelEditButton.hidden = true;
+        cardNameInput.value = "";
+        cardMarketValueInput.value = "";
+
+        renderCollectionCards();
+        calculateCollectionTotal();
     })
 
     // Settings
