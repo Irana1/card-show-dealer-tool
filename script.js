@@ -30,12 +30,72 @@ document.addEventListener("DOMContentLoaded", function() {
     const collectionPercentageBtns = document.querySelectorAll(".collection-percentage-btn");
     const collectionOfferDisplay = document.querySelector("#collection-offer-span");
 
+    const settingsForm = document.querySelector("#settings-form");
+    const defaultBuyPercentageInput = document.querySelector("#default-buy-pct");
+    const defaultTradePercentageInput = document.querySelector("#default-trade-pct");
+    const defaultCollectionPercentageInput = document.querySelector("#default-collection-pct");
+
     // Pre-established variables and Arrays
 
     let collectionCards = []
     let selectedCollectionPercentage = null
+    let settings = {
+        defaultBuyPercentage: 75,
+        defaultTradePercentage: 85,
+        defaultCollectionPercentage: 80
+    }
 
     // Functions
+
+    function loadSettingsForm() {
+        defaultBuyPercentageInput.value = settings.defaultBuyPercentage;
+        defaultTradePercentageInput.value = settings.defaultTradePercentage;
+        defaultCollectionPercentageInput.value = settings.defaultCollectionPercentage;
+    }
+
+    function loadSavedSettings() {
+        const dealerSettings = localStorage.getItem("dealerSettings");
+        if (dealerSettings) {
+            const dealerSettingsParsed = JSON.parse(dealerSettings);
+            settings = dealerSettingsParsed;
+        }
+    }
+
+    function applyDefaultSettings() {
+        buyPercentageInput.value = settings.defaultBuyPercentage;
+        for (const button of buyPercentageBtns) {
+            button.classList.remove("selected-percentage");
+
+            let buyButtonDataPercentage = Number(button.dataset.percentage);
+
+            if (buyButtonDataPercentage === settings.defaultBuyPercentage) {
+                button.classList.add("selected-percentage");
+            }
+        }
+
+        tradePercentageInput.value = settings.defaultTradePercentage;
+        for (const button of tradePercentageBtns) {
+            button.classList.remove("selected-percentage");
+
+            let tradeButtonDataPercentage = Number(button.dataset.percentage);
+
+            if (tradeButtonDataPercentage === settings.defaultTradePercentage) {
+                button.classList.add("selected-percentage");
+            }
+        }
+
+        selectedCollectionPercentage = settings.defaultCollectionPercentage;        
+        for (const button of collectionPercentageBtns) {
+            button.classList.remove("selected-percentage");
+
+            let collectionButtonDataPercentage = Number(button.dataset.percentage);
+
+            if (collectionButtonDataPercentage === settings.defaultCollectionPercentage) {
+                button.classList.add("selected-percentage");
+
+            }
+        }
+    }
 
     function calculateBuyOffer() {
         if (buyMarketValueInput.value === "" || buyPercentageInput.value === "") {
@@ -148,7 +208,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 renderCollectionCards();
                 calculateCollectionTotal();
 
-                if (selectedCollectionPercentage !== "") {
+                if (selectedCollectionPercentage !== null) {
                     calculateCollectionOffer(selectedCollectionPercentage);
                 }
             })
@@ -170,12 +230,18 @@ document.addEventListener("DOMContentLoaded", function() {
         return collectionTotal;
     }
 
-    function calculateCollectionOffer(percentageDecimal) {
+    function calculateCollectionOffer(percentage) {
         let collectionTotal = calculateCollectionTotal();
-        percentageDecimal = percentageDecimal / 100;
-        let collectionOffer = collectionTotal * percentageDecimal;
+        percentage = percentage / 100;
+        let collectionOffer = collectionTotal * percentage;
         collectionOfferDisplay.textContent = `$${collectionOffer.toFixed(2)}`;
     }
+    
+    // Main
+
+    loadSavedSettings();
+    loadSettingsForm();
+    applyDefaultSettings();
 
     // Buy Calculator
 
@@ -244,7 +310,7 @@ document.addEventListener("DOMContentLoaded", function() {
         calculateTradeOffer();
     })
 
-    // Purchase Calculator
+    // Profit Calculator
 
     purchaseCostInput.addEventListener("input", () => {
         calculateProfit();
@@ -295,12 +361,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
         collectionCards.push(card);
 
-        console.log(collectionCards);
-
         renderCollectionCards();
         calculateCollectionTotal();
 
-        if (selectedCollectionPercentage !== "") {
+        if (selectedCollectionPercentage !== null) {
             calculateCollectionOffer(selectedCollectionPercentage);
         }
 
@@ -321,5 +385,35 @@ document.addEventListener("DOMContentLoaded", function() {
 
             calculateCollectionOffer(percentage);
         })
+    })
+
+    // Settings
+
+    settingsForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        let defaultBuyPercentage = Number(defaultBuyPercentageInput.value);
+        let defaultTradePercentage = Number(defaultTradePercentageInput.value);
+        let defaultCollectionPercentage = Number(defaultCollectionPercentageInput.value);
+
+        if (defaultBuyPercentageInput.value === "" || defaultTradePercentageInput.value === "" || defaultCollectionPercentageInput.value === "") {
+            return;
+        }
+
+        if (defaultBuyPercentage < 0 || defaultTradePercentage < 0 || defaultCollectionPercentage < 0) {
+            return;
+        }
+
+        if (defaultBuyPercentage > 100 || defaultTradePercentage > 100 || defaultCollectionPercentage > 100) {
+            return;
+        }
+
+        settings.defaultBuyPercentage = defaultBuyPercentage;
+        settings.defaultTradePercentage = defaultTradePercentage;
+        settings.defaultCollectionPercentage = defaultCollectionPercentage;
+
+        applyDefaultSettings();
+
+        localStorage.setItem("dealerSettings", JSON.stringify(settings));
     })
 })
