@@ -61,6 +61,14 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+    function loadSavedCollection() {
+        const savedCollectionCards = localStorage.getItem("collectionCards");
+        if (savedCollectionCards) {
+            const collectionCardsParsed = JSON.parse(savedCollectionCards)
+            collectionCards = collectionCardsParsed;
+        }
+    }
+
     function applyDefaultSettings() {
         buyPercentageInput.value = settings.defaultBuyPercentage;
         for (const button of buyPercentageBtns) {
@@ -205,6 +213,7 @@ document.addEventListener("DOMContentLoaded", function() {
             deleteButton.type = "button";
             deleteButton.addEventListener("click", function() {
                 collectionCards.splice(index, 1);
+                localStorage.setItem("collectionCards", JSON.stringify(collectionCards));
                 renderCollectionCards();
                 calculateCollectionTotal();
 
@@ -242,6 +251,14 @@ document.addEventListener("DOMContentLoaded", function() {
     loadSavedSettings();
     loadSettingsForm();
     applyDefaultSettings();
+
+    loadSavedCollection();
+    renderCollectionCards();
+    calculateCollectionTotal();
+
+    if (selectedCollectionPercentage !== null) {
+        calculateCollectionOffer(selectedCollectionPercentage);
+    }
 
     // Buy Calculator
 
@@ -360,6 +377,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
 
         collectionCards.push(card);
+        localStorage.setItem("collectionCards", JSON.stringify(collectionCards));
 
         renderCollectionCards();
         calculateCollectionTotal();
