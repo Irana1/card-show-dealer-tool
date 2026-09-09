@@ -30,6 +30,9 @@ document.addEventListener("DOMContentLoaded", function() {
     const cancelEditButton = document.querySelector("#cancel-edit-button");
     const addedCardsContainer = document.querySelector("#added-cards-container");
     const totalMarketValueDisplay = document.querySelector("#total-market-value-span");
+    const collectionCardCountDisplay = document.querySelector("#collection-card-count");
+    const averageCardValueDisplay = document.querySelector("#average-card-value");
+    const collectionProfitDisplay = document.querySelector("#collection-profit");
     const collectionPercentageBtns = document.querySelectorAll(".collection-percentage-btn");
     const collectionOfferDisplay = document.querySelector("#collection-offer-span");
 
@@ -259,6 +262,14 @@ document.addEventListener("DOMContentLoaded", function() {
         })
        
         totalMarketValueDisplay.textContent = `$${collectionTotal.toFixed(2)}`;
+        collectionCardCountDisplay.textContent = collectionCards.length;
+
+        if (collectionCards.length === 0) {
+            averageCardValueDisplay.textContent = "$0.00";
+        } else {
+            let averageCardValue = collectionTotal / collectionCards.length;
+            averageCardValueDisplay.textContent = `$${averageCardValue.toFixed(2)}`;
+        }
 
         return collectionTotal;
     }
@@ -268,6 +279,13 @@ document.addEventListener("DOMContentLoaded", function() {
         percentage = percentage / 100;
         let collectionOffer = collectionTotal * percentage;
         collectionOfferDisplay.textContent = `$${collectionOffer.toFixed(2)}`;
+
+        if (collectionCards.length === 0) {
+            collectionProfitDisplay.textContent = "$0.00";
+        } else {
+            let collectionPotentialProfit = collectionTotal - collectionOffer;
+            collectionProfitDisplay.textContent = `$${collectionPotentialProfit.toFixed(2)}`;
+        }
     }
     
     // Main
@@ -446,6 +464,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         localStorage.setItem("collectionCards", JSON.stringify(collectionCards));
         collectionOfferDisplay.textContent = "$0.00";
+        collectionProfitDisplay.textContent = "$0.00";
 
         editingCardIndex = null;
         collectionSubmitButton.textContent = "Add Card";
