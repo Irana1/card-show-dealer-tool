@@ -136,6 +136,40 @@
             <span id="expected-sale-value" class="result-value">$0.00</span>
             <span>Expected Profit:</span>
             <span id="expected-profit" class="result-value">$0.00</span>
+            <span>Expected ROI:</span>
+            <span id="expected-roi" class="result-value">0.00%</span>
+            <span>Expected Margin:</span>
+            <span id="expected-margin" class="result-value">0.00%</span>
+        </section>
+    </section>
+    <section class="tool-card">
+        <h2>Inventory</h2>
+        <form id="inventory-form">
+            <label for="inventory-card-name">Card Name:</label>
+            <input id="inventory-card-name"  type="text">
+            <label for="inventory-purchase-cost">Purchase Cost:</label>
+            <input id="inventory-purchase-cost" type="number">
+            <label for="inventory-market-value">Market Value:</label>
+            <input id="inventory-market-value" type="number">
+            <label for="inventory-asking-price">Asking Price:</label>
+            <input id="inventory-asking-price" type="number">
+            <label for="inventory-location">Inventory Location:</label>
+            <select id="inventory-location">
+                <option>Select Location</option>
+                <option value="1-5-binder">$1-$5 Binder</option>
+                <option value="6-20-toploader-binder">$6-$20 Toploader Binder</option>
+                <option value="21-showcase">$21+ Showcase</option>
+            </select>
+            <label for="inventory-status">Inventory Status:</label>
+            <select id="inventory-status">
+                <option value="available">Available</option>
+                <option value="sold">Sold</option>
+                <option value="traded">Traded</option>
+            </select>
+            <button type="submit">Add to Inventory</button>
+        </form>
+        <section id="inventory-cards-container">
+
         </section>
     </section>
     <section class="tool-card">

@@ -38,6 +38,17 @@ document.addEventListener("DOMContentLoaded", function() {
     const collectionOfferDisplay = document.querySelector("#collection-offer-span");
     const expectedSaleValueDisplay = document.querySelector("#expected-sale-value");
     const expectedProfitDisplay = document.querySelector("#expected-profit");
+    const expectedRoiDisplay = document.querySelector("#expected-roi");
+    const expectedMarginDisplay = document.querySelector("#expected-margin");
+
+    const inventoryForm = document.querySelector("#inventory-form");
+    const inventoryCardNameInput = document.querySelector("#inventory-card-name");
+    const inventoryPurchaseCostInput = document.querySelector("#inventory-purchase-cost");
+    const inventoryMarketValueInput = document.querySelector("#inventory-market-value");
+    const inventoryAskingPriceInput = document.querySelector("#inventory-asking-price");
+    const inventoryLocationDropdown = document.querySelector("#inventory-location");
+    const inventoryStatusDropdown = document.querySelector("#inventory-status");
+    const inventoryCardsContainer = document.querySelector("#inventory-cards-container");
 
     const settingsForm = document.querySelector("#settings-form");
     const defaultBuyPercentageInput = document.querySelector("#default-buy-pct");
@@ -47,6 +58,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Pre-established variables and Arrays
 
     let collectionCards = [];
+    let inventoryCards = [];
     let selectedCollectionPercentage = null;
     let selectedSellPercentage = null;
     let editingCardIndex = null;
@@ -75,8 +87,16 @@ document.addEventListener("DOMContentLoaded", function() {
     function loadSavedCollection() {
         const savedCollectionCards = localStorage.getItem("collectionCards");
         if (savedCollectionCards) {
-            const collectionCardsParsed = JSON.parse(savedCollectionCards)
+            const collectionCardsParsed = JSON.parse(savedCollectionCards);
             collectionCards = collectionCardsParsed;
+        }
+    }
+
+    function loadSavedInventory() {
+        const savedInventoryCards = localStorage.getItem("inventoryCards");
+        if (savedInventoryCards) {
+            const inventoryCardsParsed = JSON.parse(savedInventoryCards);
+            inventoryCards = inventoryCardsParsed;
         }
     }
 
@@ -253,6 +273,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
                 if (selectedSellPercentage !== null && selectedCollectionPercentage !== null) {
                     calculateExpectedProfit();
+                    calculateExpectedRoi();
+                    calculateExpectedMargin();
                 }
             })
 
@@ -326,7 +348,7 @@ document.addEventListener("DOMContentLoaded", function() {
     function calculateExpectedProfit() {
         if (selectedSellPercentage === null || selectedCollectionPercentage === null) {
             expectedProfitDisplay.textContent = "$0.00"
-            return
+            return 0
         }
 
         let expectedSaleValue = calculateExpectedSaleValue();
@@ -334,6 +356,59 @@ document.addEventListener("DOMContentLoaded", function() {
         let expectedProfit = expectedSaleValue - collectionOffer;
 
         expectedProfitDisplay.textContent = `$${expectedProfit.toFixed(2)}`;
+
+        return expectedProfit;
+    }
+
+    function calculateExpectedRoi() {
+        if (selectedCollectionPercentage === null || selectedSellPercentage === null) {
+            expectedRoiDisplay.textContent = "0.00%";
+            return;
+        }
+
+        let expectedProfit = calculateExpectedProfit();
+        let collectionOffer = calculateCollectionOffer(selectedCollectionPercentage);
+
+        if (collectionOffer === 0) {
+            expectedRoiDisplay.textContent = "0.00%";
+            return;
+        }
+
+        let expectedRoi = expectedProfit / collectionOffer * 100;
+
+        expectedRoiDisplay.textContent = `${expectedRoi.toFixed(2)}%`;
+    }
+
+    function calculateExpectedMargin() {
+        if (selectedCollectionPercentage === null || selectedSellPercentage === null) {
+            expectedMarginDisplay.textContent = "0.00%";
+            return;
+        }
+
+        let expectedProfit = calculateExpectedProfit();
+        let expectedSaleValue = calculateExpectedSaleValue();
+
+        if (expectedSaleValue === 0) {
+            expectedMarginDisplay.textContent = "0.00%";
+            return;
+        }
+
+        let expectedMargin = expectedProfit / expectedSaleValue * 100;
+
+        expectedMarginDisplay.textContent = `${expectedMargin.toFixed(2)}%`;
+    }
+
+    function renderInventoryCards() {
+        inventoryCardsContainer.innerHTML = "";
+
+        inventoryCards.forEach((card, index) => {
+            const inventoryCardDiv = document.createElement("div");
+            inventoryCardDiv.textContent = `${card.name} - $${card.purchaseCost.toFixed(2)} - 
+                $${card.marketValue.toFixed(2)} - $${card.askingPrice.toFixed(2)} - 
+                ${card.location} - ${card.status}`
+
+            inventoryCardsContainer.appendChild(inventoryCardDiv);      
+        })        
     }
     
     // Main
@@ -345,6 +420,9 @@ document.addEventListener("DOMContentLoaded", function() {
     loadSavedCollection();
     renderCollectionCards();
     calculateCollectionTotal();
+
+    loadSavedInventory();
+    renderInventoryCards();
 
     if (selectedCollectionPercentage !== null) {
         calculateCollectionOffer(selectedCollectionPercentage);
@@ -489,6 +567,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
         if (selectedSellPercentage !== null && selectedCollectionPercentage !== null) {
             calculateExpectedProfit();
+            calculateExpectedRoi();
+            calculateExpectedMargin();
         }
 
         cardNameInput.value = "";
@@ -510,6 +590,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
             calculateCollectionOffer(percentage);
             calculateExpectedProfit();
+            calculateExpectedRoi();
+            calculateExpectedMargin();
         })
     })
 
@@ -528,6 +610,8 @@ document.addEventListener("DOMContentLoaded", function() {
         collectionProfitDisplay.textContent = "$0.00";
         expectedSaleValueDisplay.textContent = "$0.00";
         expectedProfitDisplay.textContent = "$0.00";
+        expectedRoiDisplay.textContent = "0.00%";
+        expectedMarginDisplay.textContent = "0.00%";
 
         editingCardIndex = null;
         collectionSubmitButton.textContent = "Add Card";
@@ -553,7 +637,60 @@ document.addEventListener("DOMContentLoaded", function() {
 
             calculateExpectedSaleValue();
             calculateExpectedProfit();
+            calculateExpectedRoi();
+            calculateExpectedMargin();
         })
+    })
+
+    // Inventory Form
+
+    inventoryForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        let inventoryCardName = inventoryCardNameInput.value.trim();
+        let inventoryPurchaseCost = Number(inventoryPurchaseCostInput.value);
+        let inventoryMarketValue = Number(inventoryMarketValueInput.value);
+        let inventoryAskingPrice = Number(inventoryAskingPriceInput.value);
+        let inventoryLocation = inventoryLocationDropdown.value;
+        let inventoryStatus = inventoryStatusDropdown.value;
+
+        if (inventoryCardName === "" ||
+            inventoryPurchaseCostInput.value === "" ||
+            inventoryMarketValueInput.value === "" ||
+            inventoryAskingPriceInput.value === "" ||
+            inventoryLocation === "" ||
+            inventoryStatus === ""
+        ) {
+            return;
+        }
+
+        if (inventoryPurchaseCost < 0 || 
+            inventoryMarketValue < 0 ||
+            inventoryAskingPrice < 0
+        ) {
+            return;
+        }
+
+        let inventoryCard = {
+            name: inventoryCardName,
+            purchaseCost: inventoryPurchaseCost,
+            marketValue: inventoryMarketValue,
+            askingPrice: inventoryAskingPrice,
+            location: inventoryLocation,
+            status: inventoryStatus
+        }
+
+        inventoryCards.push(inventoryCard);
+        localStorage.setItem("inventoryCards", JSON.stringify(inventoryCards));
+        renderInventoryCards();
+
+        inventoryCardNameInput.value = "";
+        inventoryPurchaseCostInput.value = "";
+        inventoryMarketValueInput.value = "";
+        inventoryAskingPriceInput.value = "";
+        inventoryLocationDropdown.value = "";
+        inventoryStatusDropdown.value = "available";
+
     })
 
     // Settings
