@@ -34,7 +34,10 @@ document.addEventListener("DOMContentLoaded", function() {
     const averageCardValueDisplay = document.querySelector("#average-card-value");
     const collectionProfitDisplay = document.querySelector("#collection-profit");
     const collectionPercentageBtns = document.querySelectorAll(".collection-percentage-btn");
+    const sellPercentageBtns = document.querySelectorAll(".sell-percentage-btn");    
     const collectionOfferDisplay = document.querySelector("#collection-offer-span");
+    const expectedSaleValueDisplay = document.querySelector("#expected-sale-value");
+    const expectedProfitDisplay = document.querySelector("#expected-profit");
 
     const settingsForm = document.querySelector("#settings-form");
     const defaultBuyPercentageInput = document.querySelector("#default-buy-pct");
@@ -43,8 +46,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Pre-established variables and Arrays
 
-    let collectionCards = []
-    let selectedCollectionPercentage = null
+    let collectionCards = [];
+    let selectedCollectionPercentage = null;
+    let selectedSellPercentage = null;
     let editingCardIndex = null;
     let settings = {
         defaultBuyPercentage: 75,
@@ -215,6 +219,8 @@ document.addEventListener("DOMContentLoaded", function() {
             const cardDiv = document.createElement("div");
             cardDiv.textContent = `${card.name} - $${card.marketValue.toFixed(2)}`;
 
+            // Edit Button Listener
+
             const editButton = document.createElement("button");
             editButton.textContent = "Edit";
             editButton.type = "button";
@@ -225,6 +231,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 collectionSubmitButton.textContent = "Update Card";
                 cancelEditButton.hidden = false;
             })
+
+            // Delete Button Listener
 
             const deleteButton = document.createElement("button");
             deleteButton.textContent = "Delete";
@@ -237,6 +245,14 @@ document.addEventListener("DOMContentLoaded", function() {
 
                 if (selectedCollectionPercentage !== null) {
                     calculateCollectionOffer(selectedCollectionPercentage);
+                }
+
+                if (selectedSellPercentage !== null) {
+                    calculateExpectedSaleValue();
+                }
+
+                if (selectedSellPercentage !== null && selectedCollectionPercentage !== null) {
+                    calculateExpectedProfit();
                 }
             })
 
@@ -279,13 +295,45 @@ document.addEventListener("DOMContentLoaded", function() {
         percentage = percentage / 100;
         let collectionOffer = collectionTotal * percentage;
         collectionOfferDisplay.textContent = `$${collectionOffer.toFixed(2)}`;
-
+        
         if (collectionCards.length === 0) {
             collectionProfitDisplay.textContent = "$0.00";
         } else {
             let collectionPotentialProfit = collectionTotal - collectionOffer;
             collectionProfitDisplay.textContent = `$${collectionPotentialProfit.toFixed(2)}`;
         }
+
+        return collectionOffer;
+    }
+
+    function calculateExpectedSaleValue() {
+        let currentCollectionTotal = calculateCollectionTotal();
+
+        if (selectedSellPercentage === null) {
+            expectedSaleValueDisplay.textContent = "$0.00";
+            return 0;
+        }
+
+        let selectedSellPercentageDecimal = selectedSellPercentage / 100;
+
+        let expectedSaleValue = currentCollectionTotal * selectedSellPercentageDecimal;
+
+        expectedSaleValueDisplay.textContent = `$${expectedSaleValue.toFixed(2)}`;
+
+        return expectedSaleValue;
+    }
+
+    function calculateExpectedProfit() {
+        if (selectedSellPercentage === null || selectedCollectionPercentage === null) {
+            expectedProfitDisplay.textContent = "$0.00"
+            return
+        }
+
+        let expectedSaleValue = calculateExpectedSaleValue();
+        let collectionOffer = calculateCollectionOffer(selectedCollectionPercentage);
+        let expectedProfit = expectedSaleValue - collectionOffer;
+
+        expectedProfitDisplay.textContent = `$${expectedProfit.toFixed(2)}`;
     }
     
     // Main
@@ -397,7 +445,7 @@ document.addEventListener("DOMContentLoaded", function() {
         calculateSuggestedPrice();
     })
 
-    // Collection Buy Evaluator
+    // Collection Form Submit Handler
 
     collectionBuyEvaluator.addEventListener("submit", function(event) {
         event.preventDefault();
@@ -435,9 +483,19 @@ document.addEventListener("DOMContentLoaded", function() {
             calculateCollectionOffer(selectedCollectionPercentage);
         }
 
+        if (selectedSellPercentage !== null) {
+            calculateExpectedSaleValue();
+        }
+
+        if (selectedSellPercentage !== null && selectedCollectionPercentage !== null) {
+            calculateExpectedProfit();
+        }
+
         cardNameInput.value = "";
         cardMarketValueInput.value = "";
     })
+
+    // Collection Percentage Buttons
 
     collectionPercentageBtns.forEach(button => {
         button.addEventListener("click", (event) => {
@@ -447,12 +505,15 @@ document.addEventListener("DOMContentLoaded", function() {
 
             button.classList.add("selected-percentage");
 
-            let percentage = event.target.dataset.percentage;
+            let percentage = Number(event.target.dataset.percentage);
             selectedCollectionPercentage = percentage
 
             calculateCollectionOffer(percentage);
+            calculateExpectedProfit();
         })
     })
+
+    // Clear Collection Button
 
     clearCollectionButton.addEventListener("click", () => {
         const confirmed = confirm("Are you sure you want to clear the collection?");
@@ -465,6 +526,8 @@ document.addEventListener("DOMContentLoaded", function() {
         localStorage.setItem("collectionCards", JSON.stringify(collectionCards));
         collectionOfferDisplay.textContent = "$0.00";
         collectionProfitDisplay.textContent = "$0.00";
+        expectedSaleValueDisplay.textContent = "$0.00";
+        expectedProfitDisplay.textContent = "$0.00";
 
         editingCardIndex = null;
         collectionSubmitButton.textContent = "Add Card";
@@ -474,6 +537,23 @@ document.addEventListener("DOMContentLoaded", function() {
 
         renderCollectionCards();
         calculateCollectionTotal();
+    })
+
+    // Sell Percentage Buttons
+
+    sellPercentageBtns.forEach(button => {
+        button.addEventListener("click", (event) => {
+            sellPercentageBtns.forEach(btn => {
+                btn.classList.remove("selected-percentage");
+            })
+            button.classList.add("selected-percentage");
+
+            let percentage = Number(event.target.dataset.percentage);
+            selectedSellPercentage = percentage;
+
+            calculateExpectedSaleValue();
+            calculateExpectedProfit();
+        })
     })
 
     // Settings
