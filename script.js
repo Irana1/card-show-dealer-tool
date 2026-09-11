@@ -49,6 +49,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const inventoryLocationDropdown = document.querySelector("#inventory-location");
     const inventoryStatusDropdown = document.querySelector("#inventory-status");
     const inventoryCardsContainer = document.querySelector("#inventory-cards-container");
+    const inventorySubmitButton = document.querySelector("#inventory-submit-button");
 
     const settingsForm = document.querySelector("#settings-form");
     const defaultBuyPercentageInput = document.querySelector("#default-buy-pct");
@@ -62,6 +63,7 @@ document.addEventListener("DOMContentLoaded", function() {
     let selectedCollectionPercentage = null;
     let selectedSellPercentage = null;
     let editingCardIndex = null;
+    let editingInventoryCardIndex = null;
     let settings = {
         defaultBuyPercentage: 75,
         defaultTradePercentage: 85,
@@ -407,6 +409,44 @@ document.addEventListener("DOMContentLoaded", function() {
                 $${card.marketValue.toFixed(2)} - $${card.askingPrice.toFixed(2)} - 
                 ${card.location} - ${card.status}`
 
+            const editButton = document.createElement("button");
+            editButton.textContent = "Edit";
+            editButton.type = "button";
+            editButton.addEventListener("click", function() {
+                inventoryCardNameInput.value = card.name;
+                inventoryPurchaseCostInput.value = card.purchaseCost;
+                inventoryMarketValueInput.value = card.marketValue;
+                inventoryAskingPriceInput.value = card.askingPrice;
+                inventoryLocationDropdown.value = card.location;
+                inventoryStatusDropdown.value = card.status;
+                editingInventoryCardIndex = index;
+                inventorySubmitButton.textContent = "Update Inventory";
+            }) 
+
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.type = "button";
+            deleteButton.addEventListener("click", function() {
+                if (index === editingInventoryCardIndex) {
+                    editingInventoryCardIndex = null;
+                    inventorySubmitButton.textContent = "Add to Inventory";
+                    inventoryCardNameInput.value = "";
+                    inventoryPurchaseCostInput.value = "";
+                    inventoryMarketValueInput.value = "";
+                    inventoryAskingPriceInput.value = "";
+                    inventoryLocationDropdown.value = "";
+                    inventoryStatusDropdown.value = "available";
+                } else if (index < editingInventoryCardIndex) {
+                    editingInventoryCardIndex = editingInventoryCardIndex - 1;
+                }
+                
+                inventoryCards.splice(index, 1);
+                localStorage.setItem("inventoryCards", JSON.stringify(inventoryCards));
+                renderInventoryCards();
+            })
+
+            inventoryCardDiv.appendChild(editButton);
+            inventoryCardDiv.appendChild(deleteButton);
             inventoryCardsContainer.appendChild(inventoryCardDiv);      
         })        
     }
@@ -680,8 +720,15 @@ document.addEventListener("DOMContentLoaded", function() {
             status: inventoryStatus
         }
 
-        inventoryCards.push(inventoryCard);
+        if (editingInventoryCardIndex !== null) {
+            inventoryCards[editingInventoryCardIndex] = inventoryCard;
+        } else {
+            inventoryCards.push(inventoryCard);
+        }
         localStorage.setItem("inventoryCards", JSON.stringify(inventoryCards));
+        editingInventoryCardIndex = null;
+        inventorySubmitButton.textContent = "Add to Inventory";
+
         renderInventoryCards();
 
         inventoryCardNameInput.value = "";
