@@ -50,6 +50,11 @@ document.addEventListener("DOMContentLoaded", function() {
     const inventoryStatusDropdown = document.querySelector("#inventory-status");
     const inventoryCardsContainer = document.querySelector("#inventory-cards-container");
     const inventorySubmitButton = document.querySelector("#inventory-submit-button");
+    const inventoryCardCount = document.querySelector("#inventory-count");
+    const inventoryTotalPurchaseCost = document.querySelector("#inventory-total-purchase-cost");
+    const inventoryTotalMarketValue = document.querySelector("#inventory-total-market-value");
+    const inventoryTotalAskingPrice = document.querySelector("#inventory-total-asking-price");
+    const inventoryPotentialProfit = document.querySelector("#inventory-potential-profit");
 
     const settingsForm = document.querySelector("#settings-form");
     const defaultBuyPercentageInput = document.querySelector("#default-buy-pct");
@@ -439,16 +444,38 @@ document.addEventListener("DOMContentLoaded", function() {
                 } else if (index < editingInventoryCardIndex) {
                     editingInventoryCardIndex = editingInventoryCardIndex - 1;
                 }
-                
+
                 inventoryCards.splice(index, 1);
                 localStorage.setItem("inventoryCards", JSON.stringify(inventoryCards));
+
                 renderInventoryCards();
+                calculateInventorySummary();
             })
 
             inventoryCardDiv.appendChild(editButton);
             inventoryCardDiv.appendChild(deleteButton);
             inventoryCardsContainer.appendChild(inventoryCardDiv);      
         })        
+    }
+
+    function calculateInventorySummary() {
+        let inventoryCount = inventoryCards.length;
+        let totalPurchaseCost = 0;
+        let totalMarketValue = 0;
+        let totalAskingPrice = 0;
+
+        for (const card of inventoryCards) {
+            totalPurchaseCost += card.purchaseCost;
+            totalMarketValue += card.marketValue;
+            totalAskingPrice += card.askingPrice;
+        }
+        let totalPotentialProfit = totalAskingPrice - totalPurchaseCost;
+
+        inventoryCardCount.textContent = `${inventoryCount}`;
+        inventoryTotalPurchaseCost.textContent = `$${totalPurchaseCost.toFixed(2)}`;
+        inventoryTotalMarketValue.textContent = `$${totalMarketValue.toFixed(2)}`;
+        inventoryTotalAskingPrice.textContent = `$${totalAskingPrice.toFixed(2)}`;
+        inventoryPotentialProfit.textContent = `$${totalPotentialProfit.toFixed(2)}`;
     }
     
     // Main
@@ -463,6 +490,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     loadSavedInventory();
     renderInventoryCards();
+    calculateInventorySummary();
 
     if (selectedCollectionPercentage !== null) {
         calculateCollectionOffer(selectedCollectionPercentage);
@@ -730,6 +758,7 @@ document.addEventListener("DOMContentLoaded", function() {
         inventorySubmitButton.textContent = "Add to Inventory";
 
         renderInventoryCards();
+        calculateInventorySummary();
 
         inventoryCardNameInput.value = "";
         inventoryPurchaseCostInput.value = "";
