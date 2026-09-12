@@ -168,9 +168,28 @@
             </select>
             <button id="inventory-submit-button" type="submit">Add to Inventory</button>
         </form>
+        <section class="inventory-controls">
+            <label for="inventory-search">Search:</label>
+            <input id="inventory-search" type="text">
+            <label for="inventory-location-filter">Location:</label>
+            <select id="inventory-location-filter">
+                <option value="all-locations">All Locations</option>
+                <option value="1-5-binder">$1-$5 Binder</option>
+                <option value="6-20-toploader-binder">$6-$20 Toploader Binder</option>
+                <option value="21-showcase">$21+ Showcase</option>
+            </select>
+            <label for="inventory-status-filter">Status:</label>
+            <select id="inventory-status-filter">
+                <option value="all-statuses">All Status</option>
+                <option value="available">Available</option>
+                <option value="sold">Sold</option>
+                <option value="traded">Traded</option>
+            </select>
+        </section>
         <section id="inventory-cards-container">
 
         </section>
+        
         <section class="results">
             <span>Inventory Count:</span>
             <span id="inventory-count" class="result-value">0</span>

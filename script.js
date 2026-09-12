@@ -50,6 +50,9 @@ document.addEventListener("DOMContentLoaded", function() {
     const inventoryStatusDropdown = document.querySelector("#inventory-status");
     const inventoryCardsContainer = document.querySelector("#inventory-cards-container");
     const inventorySubmitButton = document.querySelector("#inventory-submit-button");
+    const inventorySearch = document.querySelector("#inventory-search");
+    const inventoryLocationFilter = document.querySelector("#inventory-location-filter");
+    const inventoryStatusFilter = document.querySelector("#inventory-status-filter");
     const inventoryCardCount = document.querySelector("#inventory-count");
     const inventoryTotalPurchaseCost = document.querySelector("#inventory-total-purchase-cost");
     const inventoryTotalMarketValue = document.querySelector("#inventory-total-market-value");
@@ -407,8 +410,23 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function renderInventoryCards() {
         inventoryCardsContainer.innerHTML = "";
+        
 
-        inventoryCards.forEach((card, index) => {
+        let searchValue = inventorySearch.value.trim().toLowerCase();
+        let locationFilter = inventoryLocationFilter.value;
+        let statusFilter = inventoryStatusFilter.value;
+
+        const filteredInventory = inventoryCards.filter((card) => {
+            const matchesSearch = card.name.toLowerCase().includes(searchValue);
+            const matchesLocation = locationFilter === "all-locations" || card.location === locationFilter;
+            const matchesStatus = statusFilter === "all-statuses" || card.status === statusFilter;
+
+            return matchesSearch && matchesLocation && matchesStatus;
+        }) 
+
+        filteredInventory.forEach((card) => {
+            const originalIndex = inventoryCards.indexOf(card);
+
             const inventoryCardDiv = document.createElement("div");
             inventoryCardDiv.textContent = `${card.name} - $${card.purchaseCost.toFixed(2)} - 
                 $${card.marketValue.toFixed(2)} - $${card.askingPrice.toFixed(2)} - 
@@ -424,7 +442,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 inventoryAskingPriceInput.value = card.askingPrice;
                 inventoryLocationDropdown.value = card.location;
                 inventoryStatusDropdown.value = card.status;
-                editingInventoryCardIndex = index;
+                editingInventoryCardIndex = originalIndex;
                 inventorySubmitButton.textContent = "Update Inventory";
             }) 
 
@@ -432,7 +450,7 @@ document.addEventListener("DOMContentLoaded", function() {
             deleteButton.textContent = "Delete";
             deleteButton.type = "button";
             deleteButton.addEventListener("click", function() {
-                if (index === editingInventoryCardIndex) {
+                if (originalIndex === editingInventoryCardIndex) {
                     editingInventoryCardIndex = null;
                     inventorySubmitButton.textContent = "Add to Inventory";
                     inventoryCardNameInput.value = "";
@@ -441,11 +459,11 @@ document.addEventListener("DOMContentLoaded", function() {
                     inventoryAskingPriceInput.value = "";
                     inventoryLocationDropdown.value = "";
                     inventoryStatusDropdown.value = "available";
-                } else if (index < editingInventoryCardIndex) {
+                } else if (originalIndex < editingInventoryCardIndex) {
                     editingInventoryCardIndex = editingInventoryCardIndex - 1;
                 }
 
-                inventoryCards.splice(index, 1);
+                inventoryCards.splice(originalIndex, 1);
                 localStorage.setItem("inventoryCards", JSON.stringify(inventoryCards));
 
                 renderInventoryCards();
@@ -455,7 +473,7 @@ document.addEventListener("DOMContentLoaded", function() {
             inventoryCardDiv.appendChild(editButton);
             inventoryCardDiv.appendChild(deleteButton);
             inventoryCardsContainer.appendChild(inventoryCardDiv);      
-        })        
+        })
     }
 
     function calculateInventorySummary() {
@@ -767,6 +785,18 @@ document.addEventListener("DOMContentLoaded", function() {
         inventoryLocationDropdown.value = "";
         inventoryStatusDropdown.value = "available";
 
+    })
+
+    inventorySearch.addEventListener("input", (event) => {
+        renderInventoryCards();
+    })
+
+    inventoryLocationFilter.addEventListener("change", (event) => {
+        renderInventoryCards();
+    })
+
+    inventoryStatusFilter.addEventListener("change", (event) => {
+        renderInventoryCards();
     })
 
     // Settings
