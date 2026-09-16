@@ -65,6 +65,13 @@ document.addEventListener("DOMContentLoaded", function() {
     const inventoryRealizedRevenue = document.querySelector("#inventory-realized-revenue");
     const inventoryRealizedProfit = document.querySelector("#inventory-realized-profit");
 
+    const showSessionForm = document.querySelector("#show-session-form");
+    const showNameInput = document.querySelector("#show-name");
+    const showDateInput = document.querySelector("#show-date");
+    const showStartingCashInput = document.querySelector("#show-starting-cash");
+    const showNotesInput = document.querySelector("#show-notes");
+    const activeShowContainer = document.querySelector("#active-show-container");
+
     const settingsForm = document.querySelector("#settings-form");
     const defaultBuyPercentageInput = document.querySelector("#default-buy-pct");
     const defaultTradePercentageInput = document.querySelector("#default-trade-pct");
@@ -78,6 +85,7 @@ document.addEventListener("DOMContentLoaded", function() {
     let selectedSellPercentage = null;
     let editingCardIndex = null;
     let editingInventoryCardIndex = null;
+    let activeShow = null;
     let settings = {
         defaultBuyPercentage: 75,
         defaultTradePercentage: 85,
@@ -113,6 +121,14 @@ document.addEventListener("DOMContentLoaded", function() {
         if (savedInventoryCards) {
             const inventoryCardsParsed = JSON.parse(savedInventoryCards);
             inventoryCards = inventoryCardsParsed;
+        }
+    }
+
+    function loadActiveShow() {
+        const savedActiveShow = localStorage.getItem("activeShow");
+        if (savedActiveShow) {
+            const activeShowParsed = JSON.parse(savedActiveShow);
+            activeShow = activeShowParsed;
         }
     }
 
@@ -620,6 +636,19 @@ document.addEventListener("DOMContentLoaded", function() {
         renderInventoryCards();
         calculateInventorySummary();
     }
+
+    function renderActiveShow() {
+        activeShowContainer.innerHTML = "";
+
+        if (activeShow === null) {
+            return;
+        }
+
+        const showDiv = document.createElement("div");
+        showDiv.textContent = `${activeShow.name} - ${activeShow.date} - $${activeShow.startingCash.toFixed(2)} - ${activeShow.notes}`;
+
+        activeShowContainer.appendChild(showDiv);
+    }
     
     // Main
 
@@ -634,6 +663,9 @@ document.addEventListener("DOMContentLoaded", function() {
     loadSavedInventory();
     renderInventoryCards();
     calculateInventorySummary();
+
+    loadActiveShow();
+    renderActiveShow();
 
     if (selectedCollectionPercentage !== null) {
         calculateCollectionOffer(selectedCollectionPercentage);
@@ -941,6 +973,51 @@ document.addEventListener("DOMContentLoaded", function() {
 
     inventorySortDropdown.addEventListener("change", (event) => {
         renderInventoryCards();
+    })
+
+    // Show Form
+
+    showSessionForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        let showName = showNameInput.value.trim();
+        let showDate = showDateInput.value;
+        let startingCash = Number(showStartingCashInput.value);
+        let showNotes = showNotesInput.value.trim();
+
+        if (showName === "" || showName === null) {
+            return;
+        }
+
+        if (showDate === "" || showDate === null) {
+            return;
+        }
+
+        if (showStartingCashInput.value === "" || showStartingCashInput.value === null) {
+            return;
+        }
+
+        if (startingCash < 0) {
+            return;
+        }
+
+        const show = {
+            name: showName,
+            date: showDate,
+            startingCash: startingCash,
+            notes: showNotes
+        }
+
+        activeShow = show;
+
+        localStorage.setItem("activeShow", JSON.stringify(activeShow));
+
+        renderActiveShow();
+
+        showNameInput.value = "";
+        showDateInput.value = "";
+        showStartingCashInput.value = "";
+        showNotesInput.value = "";
     })
 
     // Settings

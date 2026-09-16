@@ -239,6 +239,23 @@
             </form>
         </div>
     </section>
+    <section class="tool-card">
+        <h2>Show Session</h2>
+        <form id="show-session-form">
+            <label for="show-name">Show Name:</label>
+            <input type="text" id="show-name" required>
+            <label for="show-date">Show Date:</label>
+            <input type="date" id="show-date" required>
+            <label for="show-starting-cash">Starting Cash:</label>
+            <input type="number" step="0.01" min="0" id="show-starting-cash" required>
+            <label for="show-notes">Notes:</label>
+            <input type="text" id="show-notes">
+            <button type="submit">Start Show</button>
+        </form>
+        <section id="active-show-container">
+
+        </section>
+    </section>
     <script src="script.js"></script>
 </body>
 </html>
