@@ -156,6 +156,7 @@
             <label for="inventory-location">Inventory Location:</label>
             <select id="inventory-location">
                 <option>Select Location</option>
+                <option value="select-location">Select Location</option>
                 <option value="1-5-binder">$1-$5 Binder</option>
                 <option value="6-20-toploader-binder">$6-$20 Toploader Binder</option>
                 <option value="21-showcase">$21+ Showcase</option>
@@ -166,6 +167,10 @@
                 <option value="sold">Sold</option>
                 <option value="traded">Traded</option>
             </select>
+            <label for="inventory-final-value">Final Value:</label>
+            <input id="inventory-final-value" type="number">
+            <label for="inventory-notes">Notes</label>
+            <input id="inventory-notes" type="text">
             <button id="inventory-submit-button" type="submit">Add to Inventory</button>
         </form>
         <section class="inventory-controls">
@@ -185,6 +190,17 @@
                 <option value="sold">Sold</option>
                 <option value="traded">Traded</option>
             </select>
+            <label for="inventory-sort">Sort By:</label>
+            <select id="inventory-sort">
+                <option value="default-order">Default Order</option>
+                <option value="card-name-a-z">Card Name A-Z</option>
+                <option value="purchase-cost-low-high">Purchase Cost: Low to High</option>
+                <option value="purchase-cost-high-low">Purchase Cost: High to Low</option>
+                <option value="market-value-low-high">Market Value: Low to High</option>
+                <option value="market-value-high-low">Market Value: High to Low</option>
+                <option value="asking-price-low-high">Asking Price: Low to High</option>
+                <option value="asking-price-high-low">Asking Price: High to Low</option>
+            </select>
         </section>
         <section id="inventory-cards-container">
 
@@ -201,6 +217,12 @@
             <span id="inventory-total-asking-price" class="result-value">$0.00</span>
             <span>Potential Profit:</span>
             <span id="inventory-potential-profit" class="result-value">$0.00</span>
+            <span>Available Inventory Count</span>
+            <span id="inventory-available-count" class="result-value">0</span>
+            <span>Realized Revenue</span>
+            <span id="inventory-realized-revenue" class="result-value">$0.00</span>
+            <span>Realized Profit</span>
+            <span id="inventory-realized-profit" class="result-value">$0.00</span>
         </section>
     </section>
     <section class="tool-card">

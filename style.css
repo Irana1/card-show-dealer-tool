@@ -63,6 +63,21 @@ body > h1 {
     transform: scale(0.98);
 }
 
+.tool-card select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    font-size: 16px;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+.tool-card select:focus {
+    outline: 2px solid black;
+    outline-offset: 1px;
+}
+
 .tool-card h2 {
     margin-top: 0;
 }
@@ -139,4 +154,73 @@ body > h1 {
 #added-cards-container button {
     padding: 8px 10px;
     font-size: 14px;
+}
+
+.inventory-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.inventory-card button {
+    padding: 8px 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    cursor: pointer;
+    flex: 1;
+    min-width: 90px;
+}
+
+.inventory-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: white;
+}
+
+.inventory-controls label {
+    font-weight: bold;
+}
+
+.inventory-controls input,
+.inventory-controls select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    font-size: 16px;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+.inventory-controls input:focus,
+.inventory-controls select:focus {
+    outline: 2px solid black;
+    outline-offset: 1px;
+}
+
+.inventory-edit-button {
+    font-weight: bold;
+}
+
+.inventory-delete-button {
+    font-weight: bold;
+    border: 1px solid #999;
+}
+
+.inventory-sold-button,
+.inventory-traded-button {
+    font-weight: bold;
 }
