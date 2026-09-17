@@ -80,6 +80,25 @@ document.addEventListener("DOMContentLoaded", function() {
     const salesNotesInput = document.querySelector("#sale-notes");
     const salesContainer = document.querySelector("#sales-container");
 
+    const purchaseForm = document.querySelector("#purchase-form");
+    const purchaseItemNameInput = document.querySelector("#purchase-item-name");
+    const purchasePriceInput = document.querySelector("#purchase-price");
+    const purchaseTypeDropdown = document.querySelector("#purchase-type");
+    const purchaseAddToInventoryDropdown = document.querySelector("#purchase-add-to-inventory");
+    const purchaseMarketValueInput = document.querySelector("#purchase-market-value")
+    const purchaseInventoryLocationDropdown = document.querySelector("#purchase-inventory-location");
+    const purchaseNotesInput = document.querySelector("#purchase-notes");
+    const purchasesContainer = document.querySelector("#purchases-container");
+
+    const tradeForm = document.querySelector("#trade-form");
+    const tradeDescriptionInput = document.querySelector("#trade-description");
+    const valueGivenInput = document.querySelector("#value-given");
+    const valueReceivedInput = document.querySelector("#value-received");
+    const tradeCashAddedByDropdown = document.querySelector("#trade-cash-added-by");
+    const tradeCashAmountInput = document.querySelector("#trade-cash-amount");
+    const tradeNotesInput = document.querySelector("#trade-notes");
+    const tradesContainer = document.querySelector("#trades-container");
+
     const settingsForm = document.querySelector("#settings-form");
     const defaultBuyPercentageInput = document.querySelector("#default-buy-pct");
     const defaultTradePercentageInput = document.querySelector("#default-trade-pct");
@@ -95,13 +114,15 @@ document.addEventListener("DOMContentLoaded", function() {
     let editingInventoryCardIndex = null;
     let activeShow = null;
     let sales = [];
+    let purchases = [];
+    let trades = [];
     let settings = {
         defaultBuyPercentage: 75,
         defaultTradePercentage: 85,
         defaultCollectionPercentage: 80
     }
 
-    // Functions
+    // Load Functions
 
     function loadSettingsForm() {
         defaultBuyPercentageInput.value = settings.defaultBuyPercentage;
@@ -149,6 +170,22 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+    function loadSavedPurchases() {
+        const savedPurchases = localStorage.getItem("purchases");
+        if (savedPurchases) {
+            const purchasesParsed = JSON.parse(savedPurchases);
+            purchases = purchasesParsed;
+        }
+    }
+
+    function loadSavedTrades() {
+        const savedTrades = localStorage.getItem("trades");
+        if (savedTrades) {
+            const tradesParsed = JSON.parse(savedTrades);
+            trades = tradesParsed;
+        }
+    }
+
     function applyDefaultSettings() {
         buyPercentageInput.value = settings.defaultBuyPercentage;
         for (const button of buyPercentageBtns) {
@@ -185,6 +222,8 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+    // Calculate Buy Offer
+
     function calculateBuyOffer() {
         if (buyMarketValueInput.value === "" || buyPercentageInput.value === "") {
             return;
@@ -205,6 +244,8 @@ document.addEventListener("DOMContentLoaded", function() {
         buyOfferDisplay.textContent = `$${cashOffer.toFixed(2)}`;
     }
 
+    // Calculate Trade Offer
+
     function calculateTradeOffer() {
         if (tradeMarketValueInput.value === "" || tradePercentageInput.value === "") {
             return;
@@ -224,6 +265,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
         tradeOfferDisplay.textContent = `$${tradeOffer.toFixed(2)}`;
     }
+
+    // Calculate Profit
 
     function calculateProfit() {
         if (purchaseCostInput.value === "" || salePriceInput.value === "") {
@@ -258,6 +301,8 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+    // Calculate Suggested Price
+
     function calculateSuggestedPrice() {
         if (pricingMarketValueInput.value === "") {
             return;
@@ -280,6 +325,8 @@ document.addEventListener("DOMContentLoaded", function() {
             suggestedPriceDisplay.textContent = `$${suggestedPrice.toFixed(2)}`;
         }
     }
+
+    // Render Collection Cards
 
     function renderCollectionCards() {
         addedCardsContainer.innerHTML = "";
@@ -341,6 +388,8 @@ document.addEventListener("DOMContentLoaded", function() {
         })
     }
 
+    // Calculate Collection Total
+
     function calculateCollectionTotal() {
         let collectionTotal = 0
 
@@ -361,6 +410,8 @@ document.addEventListener("DOMContentLoaded", function() {
         return collectionTotal;
     }
 
+    // Calculate Collection Offer
+
     function calculateCollectionOffer(percentage) {
         let collectionTotal = calculateCollectionTotal();
         percentage = percentage / 100;
@@ -376,6 +427,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
         return collectionOffer;
     }
+
+    // Calculate Expected Sale Value
 
     function calculateExpectedSaleValue() {
         let currentCollectionTotal = calculateCollectionTotal();
@@ -394,6 +447,8 @@ document.addEventListener("DOMContentLoaded", function() {
         return expectedSaleValue;
     }
 
+    // Calculate Expected Profit
+
     function calculateExpectedProfit() {
         if (selectedSellPercentage === null || selectedCollectionPercentage === null) {
             expectedProfitDisplay.textContent = "$0.00"
@@ -408,6 +463,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
         return expectedProfit;
     }
+
+    // Calculate Expected ROI
 
     function calculateExpectedRoi() {
         if (selectedCollectionPercentage === null || selectedSellPercentage === null) {
@@ -428,6 +485,8 @@ document.addEventListener("DOMContentLoaded", function() {
         expectedRoiDisplay.textContent = `${expectedRoi.toFixed(2)}%`;
     }
 
+    // Calculate Expected Margin
+
     function calculateExpectedMargin() {
         if (selectedCollectionPercentage === null || selectedSellPercentage === null) {
             expectedMarginDisplay.textContent = "0.00%";
@@ -446,6 +505,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
         expectedMarginDisplay.textContent = `${expectedMargin.toFixed(2)}%`;
     }
+
+    // Render Inventory Cards
 
     function renderInventoryCards() {
         inventoryCardsContainer.innerHTML = "";
@@ -577,6 +638,8 @@ document.addEventListener("DOMContentLoaded", function() {
         })
     }
 
+    // Calculate Inventory Summary Function
+
     function calculateInventorySummary() {
         let inventoryCount = inventoryCards.length;
         let totalPurchaseCost = 0;
@@ -613,6 +676,8 @@ document.addEventListener("DOMContentLoaded", function() {
         inventoryRealizedRevenue.textContent = `$${realizedRevenue.toFixed(2)}`;
         inventoryRealizedProfit.textContent = `$${realizedProfit.toFixed(2)}`;
     }
+
+    // Mark Inventory Card Function
 
     function markInventoryCard(originalIndex, newStatus) {
         let finalValuePrompt = prompt("What is the final value of the card?")
@@ -654,6 +719,8 @@ document.addEventListener("DOMContentLoaded", function() {
         calculateInventorySummary();
     }
 
+    // Render Active Show
+
     function renderActiveShow() {
         activeShowContainer.innerHTML = "";
 
@@ -666,6 +733,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
         activeShowContainer.appendChild(showDiv);
     }
+
+    // Populate Sale Inventory Dropdown Function
 
     function populateSaleInventoryDropdown() {
         salesInventoryCardDropdown.innerHTML = `<option value="not-from-inventory">Not From Inventory</option>`;
@@ -680,6 +749,8 @@ document.addEventListener("DOMContentLoaded", function() {
         })
     }
 
+    // Render Sales Function
+
     function renderSales() {
         salesContainer.innerHTML = "";
 
@@ -688,6 +759,44 @@ document.addEventListener("DOMContentLoaded", function() {
             saleDiv.textContent = `${sale.card} - $${sale.price.toFixed(2)} - ${sale.paymentType} - ${sale.notes}`;
 
             salesContainer.appendChild(saleDiv);
+        }
+    }
+
+    // Render Purchases Function
+
+    function renderPurchases() {
+        purchasesContainer.innerHTML = "";
+
+        for (const purchase of purchases) {
+            const marketValueDisplay = purchase.marketValue !== null && purchase.marketValue !== undefined
+                ? `$${purchase.marketValue.toFixed(2)}`
+                : "N/A";
+
+            const locationDisplay = purchase.location && purchase.location !== ""
+                ? purchase.location
+                : "N/A";
+
+            const purchaseDiv = document.createElement("div");
+            purchaseDiv.textContent = `${purchase.item} - $${purchase.price.toFixed(2)} - 
+            ${purchase.type} - ${purchase.addedToInventory} - 
+            ${marketValueDisplay} - ${locationDisplay} - ${purchase.notes}`;
+
+            purchasesContainer.appendChild(purchaseDiv);
+        }
+    }
+
+    // Render Trades Function
+
+    function renderTrades() {
+        tradesContainer.innerHTML = "";
+
+        for (const trade of trades) {
+            const tradeDiv = document.createElement("div");
+            tradeDiv.textContent = `${trade.description} - Given: $${trade.valueGiven.toFixed(2)} - 
+                Received: $${trade.valueReceived.toFixed(2)} - Difference: $${trade.difference.toFixed(2)} - 
+                Cash: ${trade.cashAddedBy} $${trade.cashAmount.toFixed(2)}`;
+
+            tradesContainer.appendChild(tradeDiv);
         }
     }
     
@@ -711,6 +820,12 @@ document.addEventListener("DOMContentLoaded", function() {
     loadSavedSales();
     populateSaleInventoryDropdown();
     renderSales();
+
+    loadSavedPurchases();
+    renderPurchases();
+
+    loadSavedTrades();
+    renderTrades();
 
     if (selectedCollectionPercentage !== null) {
         calculateCollectionOffer(selectedCollectionPercentage);
@@ -1121,6 +1236,144 @@ document.addEventListener("DOMContentLoaded", function() {
         salesPaymentTypeDropdown.value = "cash";
         salesInventoryCardDropdown.value = "not-from-inventory";
         salesNotesInput.value = "";
+    })
+
+    // Purchase Form
+
+    purchaseForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        let purchaseItemName = purchaseItemNameInput.value.trim();
+        let purchasePrice = Number(purchasePriceInput.value);
+        let purchaseType = purchaseTypeDropdown.value;
+        let purchaseAddToInventory = purchaseAddToInventoryDropdown.value;
+        let purchaseMarketValue = Number(purchaseMarketValueInput.value);
+        let purchaseInventoryLocation = purchaseInventoryLocationDropdown.value;
+        let purchaseNotes = purchaseNotesInput.value.trim();
+
+        if (purchaseItemName === "") {
+            return;
+        }
+
+        if (purchasePriceInput.value === "" || purchasePrice < 0) {
+            return;
+        }
+
+        let purchaseRecordMarketValue = null;
+        let purchaseRecordLocation = null;
+
+        if (purchaseAddToInventory === "yes") {
+            if (purchaseMarketValueInput.value === "" || purchaseMarketValue < 0) {
+                return;
+            }
+
+            purchaseRecordMarketValue = purchaseMarketValue;
+            purchaseRecordLocation = purchaseInventoryLocation;
+
+            let purchaseInventoryCard = {
+                name: purchaseItemName,
+                purchaseCost: purchasePrice,
+                marketValue: purchaseRecordMarketValue,
+                askingPrice: purchaseRecordMarketValue,
+                location: purchaseRecordLocation,
+                status: "available",
+                finalValue: null,
+                notes: purchaseNotes
+            }
+
+            inventoryCards.push(purchaseInventoryCard);
+            localStorage.setItem("inventoryCards", JSON.stringify(inventoryCards));
+
+            renderInventoryCards();
+            calculateInventorySummary();
+            populateSaleInventoryDropdown();
+        }
+
+        let purchase = {
+            item: purchaseItemName,
+            price: purchasePrice,
+            type: purchaseType,
+            addedToInventory: purchaseAddToInventory,
+            marketValue: purchaseRecordMarketValue,
+            location: purchaseRecordLocation,
+            notes: purchaseNotes
+        }
+
+        purchases.push(purchase);
+        localStorage.setItem("purchases", JSON.stringify(purchases))
+
+        renderPurchases();
+
+        purchaseItemNameInput.value = "";
+        purchasePriceInput.value = "";
+        purchaseTypeDropdown.value = "cash";
+        purchaseAddToInventoryDropdown.value = "yes";
+        purchaseMarketValueInput.value = "";
+        purchaseInventoryLocationDropdown.value = "1-5-binder";
+        purchaseNotesInput.value = "";
+    })
+
+    // Trade Form
+
+    tradeForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        let tradeDescription = tradeDescriptionInput.value.trim();
+        let valueGiven = Number(valueGivenInput.value);
+        let valueReceived = Number(valueReceivedInput.value);
+        let tradeCashAddedBy = tradeCashAddedByDropdown.value;
+        let tradeCashAmount = Number(tradeCashAmountInput.value);
+        let tradeNotes = tradeNotesInput.value.trim();
+
+        if (tradeDescription === "") {
+            return;
+        }
+
+        if (valueGivenInput.value === "" || valueGiven < 0) {
+            return;
+        }
+
+        if (valueReceivedInput.value === "" || valueReceived < 0) {
+            return;
+        }
+
+        if (tradeCashAmount < 0) {
+            return;
+        }
+
+        if (tradeCashAddedBy === "none") {
+            tradeCashAmount = 0;
+        }
+
+        if (tradeCashAddedBy !== "none") {
+            if (tradeCashAmountInput.value === "") {
+                return;
+            }
+        }
+
+        let difference = valueReceived - valueGiven;
+
+        let trade = {
+            description: tradeDescription,
+            valueGiven: valueGiven,
+            valueReceived: valueReceived,
+            difference: difference,
+            cashAddedBy: tradeCashAddedBy,
+            cashAmount: tradeCashAmount,
+            notes: tradeNotes
+        }
+
+        trades.push(trade);
+        localStorage.setItem("trades", JSON.stringify(trades));
+
+        renderTrades();
+
+        tradeDescriptionInput.value = "";
+        valueGivenInput.value = "";
+        valueReceivedInput.value = "";
+        tradeCashAddedByDropdown.value = "none";
+        tradeCashAmountInput.value = "";
+        tradeNotesInput.value = "";
     })
 
     // Settings
