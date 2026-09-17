@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const inventoryAskingPriceInput = document.querySelector("#inventory-asking-price");
     const inventoryLocationDropdown = document.querySelector("#inventory-location");
     const inventoryStatusDropdown = document.querySelector("#inventory-status");
-    const inventoryFInalValueInput = document.querySelector("#inventory-final-value");
+    const inventoryFinalValueInput = document.querySelector("#inventory-final-value");
     const inventoryNotesInput = document.querySelector("#inventory-notes");
     const inventoryCardsContainer = document.querySelector("#inventory-cards-container");
     const inventorySubmitButton = document.querySelector("#inventory-submit-button");
@@ -72,6 +72,14 @@ document.addEventListener("DOMContentLoaded", function() {
     const showNotesInput = document.querySelector("#show-notes");
     const activeShowContainer = document.querySelector("#active-show-container");
 
+    const salesForm = document.querySelector("#sales-form");
+    const salesItemNameInput = document.querySelector("#sale-item-name");
+    const salesPriceInput = document.querySelector("#sales-price");
+    const salesPaymentTypeDropdown = document.querySelector("#sale-payment-type");
+    const salesInventoryCardDropdown = document.querySelector("#sale-inventory-card");
+    const salesNotesInput = document.querySelector("#sale-notes");
+    const salesContainer = document.querySelector("#sales-container");
+
     const settingsForm = document.querySelector("#settings-form");
     const defaultBuyPercentageInput = document.querySelector("#default-buy-pct");
     const defaultTradePercentageInput = document.querySelector("#default-trade-pct");
@@ -86,6 +94,7 @@ document.addEventListener("DOMContentLoaded", function() {
     let editingCardIndex = null;
     let editingInventoryCardIndex = null;
     let activeShow = null;
+    let sales = [];
     let settings = {
         defaultBuyPercentage: 75,
         defaultTradePercentage: 85,
@@ -129,6 +138,14 @@ document.addEventListener("DOMContentLoaded", function() {
         if (savedActiveShow) {
             const activeShowParsed = JSON.parse(savedActiveShow);
             activeShow = activeShowParsed;
+        }
+    }
+
+    function loadSavedSales() {
+        const savedSales = localStorage.getItem("sales");
+        if (savedSales) {
+            const salesParsed = JSON.parse(savedSales);
+            sales = salesParsed;
         }
     }
 
@@ -649,6 +666,30 @@ document.addEventListener("DOMContentLoaded", function() {
 
         activeShowContainer.appendChild(showDiv);
     }
+
+    function populateSaleInventoryDropdown() {
+        salesInventoryCardDropdown.innerHTML = `<option value="not-from-inventory">Not From Inventory</option>`;
+
+        inventoryCards.forEach((card, index) => {
+            if (card.status === "available") {
+                const option = document.createElement("option");
+                option.value = index;
+                option.textContent = `${card.name} - $${card.askingPrice.toFixed(2)}`;
+                salesInventoryCardDropdown.appendChild(option);
+            }
+        })
+    }
+
+    function renderSales() {
+        salesContainer.innerHTML = "";
+
+        for (const sale of sales) {
+            const saleDiv = document.createElement("div");
+            saleDiv.textContent = `${sale.card} - $${sale.price.toFixed(2)} - ${sale.paymentType} - ${sale.notes}`;
+
+            salesContainer.appendChild(saleDiv);
+        }
+    }
     
     // Main
 
@@ -666,6 +707,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
     loadActiveShow();
     renderActiveShow();
+
+    loadSavedSales();
+    populateSaleInventoryDropdown();
+    renderSales();
 
     if (selectedCollectionPercentage !== null) {
         calculateCollectionOffer(selectedCollectionPercentage);
@@ -948,6 +993,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         renderInventoryCards();
         calculateInventorySummary();
+        populateSaleInventoryDropdown();
 
         inventoryCardNameInput.value = "";
         inventoryPurchaseCostInput.value = "";
@@ -1018,6 +1064,63 @@ document.addEventListener("DOMContentLoaded", function() {
         showDateInput.value = "";
         showStartingCashInput.value = "";
         showNotesInput.value = "";
+    })
+
+    // Sales Form
+
+    salesForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+
+        let cardName = salesItemNameInput.value.trim();
+        let salePrice = Number(salesPriceInput.value);
+        let paymentType = salesPaymentTypeDropdown.value;
+        let inventoryCard = salesInventoryCardDropdown.value;
+        let salesNotes = salesNotesInput.value.trim();
+        let inventoryIndex = null;
+
+        if (cardName === "") {
+            return;
+        }
+
+        if (salesPriceInput.value === "" || salePrice < 0) {
+            return;
+        }
+
+        if (inventoryCard === "not-from-inventory") {
+            inventoryIndex = null;
+        } else {
+            inventoryIndex = Number(inventoryCard);
+        }
+
+        let sale = {
+            card: cardName,
+            price: salePrice,
+            paymentType: paymentType,
+            inventoryIndex: inventoryIndex,
+            notes: salesNotes
+        }
+
+        sales.push(sale);
+        localStorage.setItem("sales", JSON.stringify(sales));
+
+        if (inventoryIndex !== null) {
+            inventoryCards[inventoryIndex].status = "sold";
+            inventoryCards[inventoryIndex].finalValue = salePrice;
+
+            localStorage.setItem("inventoryCards", JSON.stringify(inventoryCards))
+
+            renderInventoryCards();
+            calculateInventorySummary();
+            populateSaleInventoryDropdown();
+        }
+
+        renderSales();
+
+        salesItemNameInput.value = "";
+        salesPriceInput.value = "";
+        salesPaymentTypeDropdown.value = "cash";
+        salesInventoryCardDropdown.value = "not-from-inventory";
+        salesNotesInput.value = "";
     })
 
     // Settings

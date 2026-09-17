@@ -155,7 +155,6 @@
             <input id="inventory-asking-price" type="number">
             <label for="inventory-location">Inventory Location:</label>
             <select id="inventory-location">
-                <option>Select Location</option>
                 <option value="select-location">Select Location</option>
                 <option value="1-5-binder">$1-$5 Binder</option>
                 <option value="6-20-toploader-binder">$6-$20 Toploader Binder</option>
@@ -253,6 +252,31 @@
             <button type="submit">Start Show</button>
         </form>
         <section id="active-show-container">
+
+        </section>
+    </section>
+    <section class="tool-card">
+        <h2>Sales Tracker</h2>
+        <form id="sales-form">
+            <label for="sale-item-name">Item / Card Name</label>
+            <input id="sale-item-name" type="text" required>
+            <label for="sales-price">Sale Price</label>
+            <input id="sales-price" type="number" step="0.01" min="0" required>
+            <label for="sale-payment-type">Payment Type:</label>
+            <select id="sale-payment-type" required>
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="other">Other</option>
+            </select>
+            <label for="sale-inventory-card">Inventory Card</label>
+            <select id="sale-inventory-card" required>
+                <option value="not-from-inventory">Not From Inventory</option>
+            </select>
+            <label for="sale-notes">Notes:</label>
+            <input id="sale-notes" type="text">
+            <button type="submit">Record Sale</button>
+        </form>
+        <section id="sales-container">
 
         </section>
     </section>
