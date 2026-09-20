@@ -99,6 +99,14 @@ document.addEventListener("DOMContentLoaded", function() {
     const tradeNotesInput = document.querySelector("#trade-notes");
     const tradesContainer = document.querySelector("#trades-container");
 
+    const showTotalSales = document.querySelector("#show-total-sales");
+    const showTotalPurchases = document.querySelector("#show-total-purchases");
+    const showNetCashFlow = document.querySelector("#show-net-cash-flow");
+    const showSalesCount = document.querySelector("#show-sales-count");
+    const showPurchaseCount = document.querySelector("#show-purchase-count");
+    const showTradeCount = document.querySelector("#show-trade-count");
+    const showEstimatedCash = document.querySelector("#show-estimated-cash");
+
     const settingsForm = document.querySelector("#settings-form");
     const defaultBuyPercentageInput = document.querySelector("#default-buy-pct");
     const defaultTradePercentageInput = document.querySelector("#default-trade-pct");
@@ -799,6 +807,55 @@ document.addEventListener("DOMContentLoaded", function() {
             tradesContainer.appendChild(tradeDiv);
         }
     }
+
+    function calculateShowDashboard() {
+        let totalSales = 0;
+        let totalPurchases = 0;
+        let netCashFlow = 0;
+        let salesCount = sales.length;
+        let purchaseCount = purchases.length;
+        let tradeCount = trades.length;
+
+        for (const sale of sales) {
+            totalSales += sale.price;
+            if (sale.paymentType === "cash") {
+                netCashFlow += sale.price;
+            }
+        }
+
+        for (const purchase of purchases) {
+            totalPurchases += purchase.price;
+            if (purchase.type === "cash") {
+                netCashFlow -= purchase.price;
+            }
+        }
+
+        for (const trade of trades) {
+            if (trade.cashAddedBy === "customer") {
+                netCashFlow += trade.cashAmount;
+            }
+
+            if (trade.cashAddedBy === "you") {
+                netCashFlow -= trade.cashAmount;
+            }
+        }
+
+        let startingCash = 0;
+
+        if (activeShow) {
+            startingCash = activeShow.startingCash;
+        }
+
+        let estimatedCash = startingCash + netCashFlow;
+
+        showTotalSales.textContent = `$${totalSales.toFixed(2)}`;
+        showTotalPurchases.textContent = `$${totalPurchases.toFixed(2)}`;
+        showNetCashFlow.textContent = `$${netCashFlow.toFixed(2)}`;
+        showSalesCount.textContent = `${salesCount}`;
+        showPurchaseCount.textContent = `${purchaseCount}`;
+        showTradeCount.textContent = `${tradeCount}`;
+        showEstimatedCash.textContent = `${estimatedCash.toFixed(2)}`;
+    }
     
     // Main
 
@@ -826,6 +883,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     loadSavedTrades();
     renderTrades();
+
+    calculateShowDashboard();
 
     if (selectedCollectionPercentage !== null) {
         calculateCollectionOffer(selectedCollectionPercentage);
@@ -1174,6 +1233,7 @@ document.addEventListener("DOMContentLoaded", function() {
         localStorage.setItem("activeShow", JSON.stringify(activeShow));
 
         renderActiveShow();
+        calculateShowDashboard();
 
         showNameInput.value = "";
         showDateInput.value = "";
@@ -1230,6 +1290,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
 
         renderSales();
+        calculateShowDashboard();
 
         salesItemNameInput.value = "";
         salesPriceInput.value = "";
@@ -1303,6 +1364,7 @@ document.addEventListener("DOMContentLoaded", function() {
         localStorage.setItem("purchases", JSON.stringify(purchases))
 
         renderPurchases();
+        calculateShowDashboard();
 
         purchaseItemNameInput.value = "";
         purchasePriceInput.value = "";
@@ -1367,6 +1429,7 @@ document.addEventListener("DOMContentLoaded", function() {
         localStorage.setItem("trades", JSON.stringify(trades));
 
         renderTrades();
+        calculateShowDashboard();
 
         tradeDescriptionInput.value = "";
         valueGivenInput.value = "";
