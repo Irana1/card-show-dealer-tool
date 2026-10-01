@@ -3,6 +3,7 @@ import { buildCardPriceUrl } from "./api.js";
 export function initializeCardSearch(onAddToInventory) {
     const cardSearchForm = document.querySelector("#card-search-form");
     const cardSearchInput = document.querySelector("#card-search-input");
+    const cardSearchLanguageSelect = document.querySelector("#card-search-language");
     const cardSearchResults = document.querySelector("#card-search-results");
     const selectedCardContainer = document.querySelector("#selected-card-container");
     const priceConditionSelect = document.querySelector("#price-condition");
@@ -15,6 +16,7 @@ export function initializeCardSearch(onAddToInventory) {
     const PRICE_CACHE_KEY = "cachedCardPrices";
 
     let selectedPokemonCard = null;
+    let selectedCardLanguage = null;
     let selectedCardPriceData = null;
     let selectedMarketPrice = null;
     let selectedPriceIsCached = false;
@@ -35,14 +37,14 @@ export function initializeCardSearch(onAddToInventory) {
         }
     }
 
-    function getPriceCacheKey(card) {
-        return `${card.name}::${card.localId}::${card.set.name}`;
+    function getPriceCacheKey(card, language) {
+        return `${language}::${card.name}::${card.localId}::${card.set.name}`;
     }
 
-    function saveCachedPrice(card, priceData) {
+    function saveCachedPrice(card, language, priceData) {
         const cachedPrices = getCachedPrices();
 
-        const cacheKey = getPriceCacheKey(card);
+        const cacheKey = getPriceCacheKey(card, language);
 
         cachedPrices[cacheKey] = {
             priceData: priceData,
@@ -55,10 +57,10 @@ export function initializeCardSearch(onAddToInventory) {
         );
     }
 
-    function getCachedPrice(card) {
+    function getCachedPrice(card, language) {
         const cachedPrices = getCachedPrices();
 
-        const cacheKey = getPriceCacheKey(card);
+        const cacheKey = getPriceCacheKey(card, language);
 
         return cachedPrices[cacheKey] || null;
     }
@@ -101,10 +103,14 @@ export function initializeCardSearch(onAddToInventory) {
         }
     }
 
-    function saveCachedSearch(searchTerm, cards) {
+    function getSearchCacheKey(searchTerm, language) {
+        return `${language}::${searchTerm.toLowerCase()}`;
+    }
+
+    function saveCachedSearch(searchTerm, language, cards) {
         const cachedSearches = getCachedSearches();
 
-        const cacheKey = searchTerm.toLowerCase();
+        const cacheKey = getSearchCacheKey(searchTerm, language);
 
         cachedSearches[cacheKey] = {
             cards: cards,
@@ -117,10 +123,10 @@ export function initializeCardSearch(onAddToInventory) {
         );
     }
 
-    function saveCachedCard(card) {
+    function saveCachedCard(card, language) {
         const cachedCards = getCachedCards();
 
-        cachedCards[card.id] = {
+        cachedCards[`${language}::${card.id}`] = {
             card: card,
             cachedAt: new Date().toISOString()
         };
@@ -131,18 +137,18 @@ export function initializeCardSearch(onAddToInventory) {
         );
     }
 
-    function getCachedSearch(searchTerm) {
+    function getCachedSearch(searchTerm, language) {
         const cachedSearches = getCachedSearches();
 
-        const cacheKey = searchTerm.toLowerCase();
+        const cacheKey = getSearchCacheKey(searchTerm, language);
 
         return cachedSearches[cacheKey] || null;
     }
 
-    function getCachedCard(cardId) {
+    function getCachedCard(cardId, language) {
         const cachedCards = getCachedCards();
 
-        return cachedCards[cardId] || null;
+        return cachedCards[`${language}::${cardId}`] || null;
     }
 
     function showCachedPriceStatus(cachedAt) {
@@ -184,7 +190,7 @@ export function initializeCardSearch(onAddToInventory) {
         }
     }
 
-    function renderSearchResults(cards, fromCache = false) {
+    function renderSearchResults(cards, language, fromCache = false) {
         cardSearchResults.innerHTML = "";
 
         if (fromCache) {
@@ -232,7 +238,7 @@ export function initializeCardSearch(onAddToInventory) {
             selectCardButton.textContent = "Select Card";
 
             selectCardButton.addEventListener("click", function() {
-                selectPokemonCard(card.id);
+                selectPokemonCard(card.id, language);
             });
 
             cardResultDiv.appendChild(cardNameSpan);
@@ -244,7 +250,7 @@ export function initializeCardSearch(onAddToInventory) {
         }
     }
 
-    async function searchPokemonCards(searchTerm) {
+    async function searchPokemonCards(searchTerm, language) {
         cardSearchResults.innerHTML = "";
 
         try {
@@ -266,7 +272,7 @@ export function initializeCardSearch(onAddToInventory) {
                 cardNumber = nameAndNumberMatch[2];
             }
 
-            const searchUrl = new URL("https://api.tcgdex.net/v2/en/cards");
+            const searchUrl = new URL(`https://api.tcgdex.net/v2/${language}/cards`);
 
             if (nameTerm) {
                 searchUrl.searchParams.set("name", nameTerm);
@@ -284,20 +290,20 @@ export function initializeCardSearch(onAddToInventory) {
 
             const cards = await response.json();
 
-            saveCachedSearch(searchTerm, cards);
+            saveCachedSearch(searchTerm, language, cards);
 
             for (const card of cards) {
-                saveCachedCard(card);
+                saveCachedCard(card, language);
             }
 
-            renderSearchResults(cards);
+            renderSearchResults(cards, language);
         } catch (error) {
             console.error("CARD SEARCH ERROR:", error);
 
-            const cachedSearch = getCachedSearch(searchTerm);
+            const cachedSearch = getCachedSearch(searchTerm, language);
 
             if (cachedSearch) {
-                renderSearchResults(cachedSearch.cards, true);
+                renderSearchResults(cachedSearch.cards, language, true);
                 return;
             }
 
@@ -311,8 +317,9 @@ export function initializeCardSearch(onAddToInventory) {
         }
     }
 
-    async function selectPokemonCard(cardId) {
+    async function selectPokemonCard(cardId, language) {
         selectedPokemonCard = null;
+        selectedCardLanguage = language;
 
         clearSelectedCardPrice();
 
@@ -320,7 +327,7 @@ export function initializeCardSearch(onAddToInventory) {
 
         try {
             const response = await fetch(
-                `https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(cardId)}`
+                `https://api.tcgdex.net/v2/${language}/cards/${encodeURIComponent(cardId)}`
             );
 
             if (!response.ok) {
@@ -329,17 +336,17 @@ export function initializeCardSearch(onAddToInventory) {
 
             const cardDetails = await response.json();
 
-            saveCachedCard(cardDetails);
+            saveCachedCard(cardDetails, language);
 
             selectedPokemonCard = cardDetails;
 
             renderSelectedCard(cardDetails);
 
-            fetchCardPrice(selectedPokemonCard);
+            fetchCardPrice(selectedPokemonCard, language);
         } catch (error) {
             console.error("CARD DETAIL ERROR:", error);
 
-            const cachedCard = getCachedCard(cardId);
+            const cachedCard = getCachedCard(cardId, language);
 
             if (cachedCard) {
                 selectedPokemonCard = cachedCard.card;
@@ -353,7 +360,7 @@ export function initializeCardSearch(onAddToInventory) {
 
                 selectedCardContainer.appendChild(cachedMessage);
 
-                fetchCardPrice(selectedPokemonCard);
+                fetchCardPrice(selectedPokemonCard, language);
 
                 return;
             }
@@ -450,7 +457,7 @@ export function initializeCardSearch(onAddToInventory) {
         selectedCardContainer.appendChild(selectedCardDiv);
     }
 
-    async function fetchCardPrice(card) {
+    async function fetchCardPrice(card, language) {
         const cardName = card.name;
         const cardNumber = card.localId;
         const setName = card.set.name;
@@ -458,7 +465,8 @@ export function initializeCardSearch(onAddToInventory) {
         const priceURL = buildCardPriceUrl(
             cardName,
             cardNumber,
-            setName
+            setName,
+            language
         );
 
         try {
@@ -474,7 +482,7 @@ export function initializeCardSearch(onAddToInventory) {
                 throw new Error("Invalid price data received.");
             }
 
-            saveCachedPrice(card, priceData);
+            saveCachedPrice(card, language, priceData);
 
             selectedCardPriceData = priceData;
             selectedPriceIsCached = false;
@@ -484,7 +492,7 @@ export function initializeCardSearch(onAddToInventory) {
         } catch (error) {
             console.error("PRICE FETCH ERROR:", error);
 
-            const cachedPrice = getCachedPrice(card);
+            const cachedPrice = getCachedPrice(card, language);
 
             if (cachedPrice) {
                 selectedCardPriceData = cachedPrice.priceData;
@@ -599,7 +607,7 @@ export function initializeCardSearch(onAddToInventory) {
             return;
         }
 
-        searchPokemonCards(searchTerm);
+        searchPokemonCards(searchTerm, cardSearchLanguageSelect.value);
     });
 
     addSelectedCardToInventoryButton.addEventListener("click", function() {
@@ -613,6 +621,7 @@ export function initializeCardSearch(onAddToInventory) {
             tcgdexId: selectedPokemonCard.id,
             cardSet: selectedPokemonCard.set.name,
             cardNumber: selectedPokemonCard.localId,
+            language: selectedCardLanguage,
             condition: priceConditionSelect.value,
             printing: pricePrintingSelect.value
         };

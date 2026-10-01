@@ -309,7 +309,7 @@ export function initializeInventory({
 
             try {
                 const tcgdexResponse = await fetch(
-                    `https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(card.tcgdexId)}`
+                    `https://api.tcgdex.net/v2/${card.language ?? "en"}/cards/${encodeURIComponent(card.tcgdexId)}`
                 );
 
                 if (!tcgdexResponse.ok) {
@@ -323,7 +323,8 @@ export function initializeInventory({
                 const priceURL = buildCardPriceUrl(
                     tcgdexCard.name,
                     tcgdexCard.localId,
-                    tcgdexCard.set.name
+                    tcgdexCard.set.name,
+                    card.language ?? "en"
                 );
 
                 const response = await fetch(priceURL);
@@ -552,6 +553,7 @@ export function initializeInventory({
             tcgdexId: cardData.tcgdexId,
             cardSet: cardData.cardSet,
             cardNumber: cardData.cardNumber,
+            language: cardData.language ?? "en",
             condition: cardData.condition,
             printing: cardData.printing
         };
@@ -623,6 +625,10 @@ export function initializeInventory({
                 pendingInventoryCardData?.cardNumber ??
                 existingInventoryCard?.cardNumber ??
                 null,
+            language:
+                pendingInventoryCardData?.language ??
+                existingInventoryCard?.language ??
+                "en",
             condition: 
                 pendingInventoryCardData?.condition ??
                 existingInventoryCard?.condition ??

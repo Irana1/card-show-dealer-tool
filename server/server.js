@@ -21,10 +21,22 @@ app.get("/api/card-price", async function(req, res) {
     const cardName = req.query.name;
     const cardNumber = req.query.number;
     const setName = req.query.set;
+    const language = req.query.language || "en";
+
+    const game = {
+        en: "pokemon",
+        ja: "pokemon-japan"
+    }[language];
 
     if (!cardName || !cardNumber || !setName) {
         return res.status(400).json({
             error: "Card name, number, and set is required"
+        });
+    }
+
+    if (!game) {
+        return res.status(400).json({
+            error: "Language must be en or ja"
         });
     }
 
@@ -35,7 +47,7 @@ app.get("/api/card-price", async function(req, res) {
     }
     
     const justTCGurl = 
-        `https://api.justtcg.com/v1/cards?q=${encodeURIComponent(cardName)}&number=${encodeURIComponent(cardNumber)}&game=pokemon`;
+        `https://api.justtcg.com/v1/cards?q=${encodeURIComponent(cardName)}&number=${encodeURIComponent(cardNumber)}&game=${game}`;
 
     const response = await fetch(justTCGurl, {
         headers: {

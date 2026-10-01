@@ -1,5 +1,11 @@
 # Card Show Dealer Tool
 
+## Card search languages
+
+Card search supports English and Japanese Pokémon cards. Choose the language
+before searching; market price lookups and inventory price updates use the
+matching Pokémon or Pokémon Japan pricing catalog.
+
 ## Deploying market pricing for GitHub Pages
 
 GitHub Pages hosts the frontend only. Market prices are fetched by the Express
