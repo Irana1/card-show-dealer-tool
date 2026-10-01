@@ -37,6 +37,14 @@ export function initializeInventory({
     let inventoryLocationChart = null;
     let pendingInventoryCardData = null;
 
+    function getSelectedOptionLabel(dropdown, value) {
+        const selectedOption = Array.from(dropdown.options).find((option) => {
+            return option.value === value;
+        });
+
+        return selectedOption ? selectedOption.textContent : value;
+    }
+
     function loadSavedInventory() {
         const savedInventoryCards = localStorage.getItem("inventoryCards");
         if (savedInventoryCards) {
@@ -165,7 +173,10 @@ export function initializeInventory({
             inventoryLocationLabel.textContent = "Location: ";
             inventoryLocationLabel.classList.add("inventory-card-label");
             const inventoryLocationSpan = document.createElement("span");
-            inventoryLocationSpan.textContent = `${card.location}`;
+            inventoryLocationSpan.textContent = getSelectedOptionLabel(
+                inventoryLocationDropdown,
+                card.location
+            );
             inventoryLocationSpan.classList.add("inventory-card-value");
             inventoryCardInfoDiv.appendChild(inventoryLocationLabel);
             inventoryCardInfoDiv.appendChild(inventoryLocationSpan);
@@ -174,7 +185,10 @@ export function initializeInventory({
             inventoryStatusLabel.textContent = "Status: ";
             inventoryStatusLabel.classList.add("inventory-card-label");
             const inventoryStatusSpan = document.createElement("span");
-            inventoryStatusSpan.textContent = `${card.status}`;
+            inventoryStatusSpan.textContent = getSelectedOptionLabel(
+                inventoryStatusDropdown,
+                card.status
+            );
             inventoryStatusSpan.classList.add("inventory-card-value");
             inventoryCardInfoDiv.appendChild(inventoryStatusLabel);
             inventoryCardInfoDiv.appendChild(inventoryStatusSpan);
@@ -215,6 +229,7 @@ export function initializeInventory({
                 inventoryNotesInput.value = card.notes ?? "";
                 editingInventoryCardIndex = originalIndex;
                 inventorySubmitButton.textContent = "Update Inventory";
+                inventorySubmitButton.focus();
             }) 
 
             const deleteButton = document.createElement("button");
