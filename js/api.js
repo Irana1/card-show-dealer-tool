@@ -1,4 +1,4 @@
-export const API_BASE_URL = "http://localhost:3000";
+export const API_BASE_URL = "https://card-show-pricing-api.onrender.com";
 
 export function buildCardPriceUrl(name, number, set) {
     const url = new URL("/api/card-price", API_BASE_URL);
