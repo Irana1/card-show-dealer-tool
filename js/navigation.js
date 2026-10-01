@@ -43,4 +43,6 @@ export function initializeNavigation() {
     }
 
     showAppPage("dashboard");
+
+    return showAppPage;
 }

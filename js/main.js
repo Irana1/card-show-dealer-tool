@@ -28,7 +28,7 @@ function initializeOptionalFeature(name, initializer) {
 
 
 function bootstrap() {
-    initializeNavigation();
+    const showAppPage = initializeNavigation();
 
     const calculators = initializeCalculators();
 
@@ -49,6 +49,7 @@ function bootstrap() {
 
     initializeCardSearch((cardData) => {
         inventory.prefillInventoryFromCardSearch(cardData);
+        showAppPage("inventory");
     });
 
     cardShow = initializeCardShow({

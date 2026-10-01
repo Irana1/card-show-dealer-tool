@@ -229,7 +229,10 @@ export function initializeInventory({
                 inventoryNotesInput.value = card.notes ?? "";
                 editingInventoryCardIndex = originalIndex;
                 inventorySubmitButton.textContent = "Update Inventory";
-                inventorySubmitButton.focus();
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                });
             }) 
 
             const deleteButton = document.createElement("button");
