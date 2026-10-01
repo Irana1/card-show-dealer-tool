@@ -11,7 +11,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 app.get("/", function(req, res) {
     res.send("Card Show Dealer Tool backend is running");
@@ -25,6 +25,12 @@ app.get("/api/card-price", async function(req, res) {
     if (!cardName || !cardNumber || !setName) {
         return res.status(400).json({
             error: "Card name, number, and set is required"
+        });
+    }
+
+    if (!JUSTTCG_API_KEY) {
+        return res.status(503).json({
+            error: "Card pricing is not configured on the server"
         });
     }
     
@@ -69,5 +75,5 @@ app.get("/api/card-price", async function(req, res) {
 });
 
 app.listen(PORT, function() {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });

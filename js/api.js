@@ -1,0 +1,13 @@
+export const API_BASE_URL = "http://localhost:3000";
+
+export function buildCardPriceUrl(name, number, set) {
+    const url = new URL("/api/card-price", API_BASE_URL);
+
+    url.search = new URLSearchParams({
+        name: name,
+        number: number,
+        set: set
+    });
+
+    return url;
+}

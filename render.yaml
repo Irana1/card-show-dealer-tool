@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: card-show-pricing-api
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: JUSTTCG_API_KEY
+        sync: false

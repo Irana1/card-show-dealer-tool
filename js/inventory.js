@@ -1,3 +1,5 @@
+import { buildCardPriceUrl } from "./api.js";
+
 export function initializeInventory({
     onSalesInventoryChanged,
     onAnalyticsChanged
@@ -300,8 +302,11 @@ export function initializeInventory({
 
                 const tcgdexCard = await tcgdexResponse.json();
 
-                const priceURL =
-                    `http://localhost:3000/api/card-price?name=${encodeURIComponent(tcgdexCard.name)}&number=${encodeURIComponent(tcgdexCard.localId)}&set=${encodeURIComponent(tcgdexCard.set.name)}`;
+                const priceURL = buildCardPriceUrl(
+                    tcgdexCard.name,
+                    tcgdexCard.localId,
+                    tcgdexCard.set.name
+                );
 
                 const response = await fetch(priceURL);
 

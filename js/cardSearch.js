@@ -1,3 +1,5 @@
+import { buildCardPriceUrl } from "./api.js";
+
 export function initializeCardSearch(onAddToInventory) {
     const cardSearchForm = document.querySelector("#card-search-form");
     const cardSearchInput = document.querySelector("#card-search-input");
@@ -453,8 +455,11 @@ export function initializeCardSearch(onAddToInventory) {
         const cardNumber = card.localId;
         const setName = card.set.name;
 
-        const priceURL =
-            `http://localhost:3000/api/card-price?name=${encodeURIComponent(cardName)}&number=${encodeURIComponent(cardNumber)}&set=${encodeURIComponent(setName)}`;
+        const priceURL = buildCardPriceUrl(
+            cardName,
+            cardNumber,
+            setName
+        );
 
         try {
             const response = await fetch(priceURL);
