@@ -183,6 +183,34 @@ export function initializeCardSearch(onAddToInventory) {
             null;
     }
 
+    async function getJapanesePokemonName(englishName) {
+        const speciesName = englishName
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, "-");
+
+        const response = await fetch(
+            `https://pokeapi.co/api/v2/pokemon-species/${encodeURIComponent(speciesName)}`
+        );
+
+        if (response.status === 404) {
+            return null;
+        }
+
+        if (!response.ok) {
+            throw new Error(`PokéAPI species lookup failed: ${response.status}`);
+        }
+
+        const species = await response.json();
+        const japaneseName = species.names.find((name) => {
+            return name.language.name === "ja";
+        }) || species.names.find((name) => {
+            return name.language.name === "ja-hrkt";
+        });
+
+        return japaneseName?.name ?? null;
+    }
+
     function showCachedPriceStatus(cachedAt) {
         const existingStatus =
             selectedCardContainer.querySelector("#selected-card-price-cache-status");
@@ -307,25 +335,59 @@ export function initializeCardSearch(onAddToInventory) {
                 cardNumber = nameAndNumberMatch[2];
             }
 
-            const searchUrl = new URL(
-                `https://api.tcgdex.net/v2/${getTcgdexLanguage(canonicalLanguage)}/cards`
-            );
+            const japaneseSearch =
+                canonicalLanguage === "Japanese";
+            const containsJapaneseText =
+                /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(nameTerm);
+            let translatedJapaneseName = null;
 
-            if (nameTerm) {
-                searchUrl.searchParams.set("name", nameTerm);
+            if (japaneseSearch && nameTerm && !containsJapaneseText) {
+                try {
+                    translatedJapaneseName = await getJapanesePokemonName(nameTerm);
+                } catch (error) {
+                    console.error("JAPANESE NAME LOOKUP ERROR:", error);
+                }
             }
 
-            if (cardNumber) {
-                searchUrl.searchParams.set("localId", cardNumber);
+            async function fetchSearchResults(language, searchName, searchNumber) {
+                const searchUrl = new URL(
+                    `https://api.tcgdex.net/v2/${getTcgdexLanguage(language)}/cards`
+                );
+
+                if (searchName) {
+                    searchUrl.searchParams.set("name", searchName);
+                }
+
+                if (searchNumber) {
+                    searchUrl.searchParams.set("localId", searchNumber);
+                }
+
+                const response = await fetch(searchUrl);
+
+                if (!response.ok) {
+                    throw new Error(`TCGdex search failed: ${response.status}`);
+                }
+
+                return response.json();
             }
 
-            const response = await fetch(searchUrl);
+            let cards;
 
-            if (!response.ok) {
-                throw new Error(`TCGdex search failed: ${response.status}`);
+            if (translatedJapaneseName) {
+                cards = await fetchSearchResults(
+                    canonicalLanguage,
+                    translatedJapaneseName,
+                    null
+                );
             }
 
-            const cards = await response.json();
+            if (!cards || cards.length === 0) {
+                cards = await fetchSearchResults(
+                    canonicalLanguage,
+                    nameTerm,
+                    cardNumber
+                );
+            }
 
             saveCachedSearch(searchTerm, canonicalLanguage, cards);
 
