@@ -16,7 +16,24 @@ export function getTcgdexLanguage(language) {
     return normalizeCardLanguage(language) === "Japanese" ? "ja" : "en";
 }
 
-export function buildCardPriceUrl(name, number, set, language = "English") {
+export function getTcgdexCardNumbers(card) {
+    const localId = String(card.localId);
+    const officialCount = Number(card.set?.cardCount?.official);
+
+    if (!localId.includes("/") && Number.isInteger(officialCount) && officialCount > 0) {
+        return [`${localId}/${officialCount}`, localId];
+    }
+
+    return [localId];
+}
+
+export function buildCardPriceUrl(
+    name,
+    number,
+    set,
+    language = "English",
+    fallbackNumber
+) {
     const url = new URL("/api/card-price", API_BASE_URL);
 
     url.search = new URLSearchParams({
@@ -25,6 +42,10 @@ export function buildCardPriceUrl(name, number, set, language = "English") {
         set: set,
         language: normalizeCardLanguage(language)
     });
+
+    if (fallbackNumber) {
+        url.searchParams.set("fallbackNumber", fallbackNumber);
+    }
 
     return url;
 }

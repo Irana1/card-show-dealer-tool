@@ -1,5 +1,6 @@
 import {
     buildCardPriceUrl,
+    getTcgdexCardNumbers,
     getTcgdexLanguage,
     normalizeCardLanguage
 } from "./api.js";
@@ -559,21 +560,33 @@ export function initializeCardSearch(onAddToInventory) {
     async function fetchCardPrice(card, language) {
         const canonicalLanguage = normalizeCardLanguage(language);
         const cardName = card.name;
-        const cardNumber = card.localId;
+        const [cardNumber, fallbackNumber] = getTcgdexCardNumbers(card);
         const setName = card.set.name;
 
         const priceURL = buildCardPriceUrl(
             cardName,
             cardNumber,
             setName,
-            canonicalLanguage
+            canonicalLanguage,
+            fallbackNumber
         );
 
         try {
             const response = await fetch(priceURL);
 
             if (!response.ok) {
-                throw new Error(`Price API failed: ${response.status}`);
+                let errorMessage = `Price API failed: ${response.status}`;
+
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.error || errorMessage;
+                } catch (error) {
+                    console.error("PRICE API ERROR RESPONSE INVALID:", error);
+                }
+
+                const priceError = new Error(errorMessage);
+                priceError.useCachedPrice = response.status >= 500;
+                throw priceError;
             }
 
             const priceData = await response.json();
@@ -592,7 +605,9 @@ export function initializeCardSearch(onAddToInventory) {
         } catch (error) {
             console.error("PRICE FETCH ERROR:", error);
 
-            const cachedPrice = getCachedPrice(card, canonicalLanguage);
+            const cachedPrice = error.useCachedPrice === false
+                ? null
+                : getCachedPrice(card, canonicalLanguage);
 
             if (cachedPrice) {
                 selectedCardPriceData = cachedPrice.priceData;
@@ -610,7 +625,9 @@ export function initializeCardSearch(onAddToInventory) {
 
             const errorMessage = document.createElement("p");
 
-            if (navigator.onLine === false) {
+            if (error.message && error.message !== "Failed to fetch") {
+                errorMessage.textContent = error.message;
+            } else if (navigator.onLine === false) {
                 errorMessage.textContent =
                     "Market pricing is unavailable offline. No cached price is available for this card.";
             } else {

@@ -1,5 +1,6 @@
 import {
     buildCardPriceUrl,
+    getTcgdexCardNumbers,
     getTcgdexLanguage,
     normalizeCardLanguage
 } from "./api.js";
@@ -365,12 +366,15 @@ export function initializeInventory({
                 }
 
                 const tcgdexCard = await tcgdexResponse.json();
+                const [cardNumber, fallbackNumber] =
+                    getTcgdexCardNumbers(tcgdexCard);
 
                 const priceURL = buildCardPriceUrl(
                     tcgdexCard.name,
-                    tcgdexCard.localId,
+                    cardNumber,
                     tcgdexCard.set.name,
-                    language
+                    language,
+                    fallbackNumber
                 );
 
                 const response = await fetch(priceURL);
