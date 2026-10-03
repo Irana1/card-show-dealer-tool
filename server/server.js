@@ -80,26 +80,68 @@ async function requestJustTcg(path, params) {
     return data.data;
 }
 
-async function resolveJustTcgSet(setName, game) {
+function getSetTitle(setName) {
+    const separatorIndex = setName.indexOf(":");
+
+    return separatorIndex >= 0
+        ? setName.slice(separatorIndex + 1).trim()
+        : setName;
+}
+
+async function resolveJustTcgSet(setName, setId, game) {
     const normalizedSetName = normalizeText(setName);
-    const cacheKey = `${game}::${normalizedSetName}`;
+    const normalizedSetId = normalizeText(setId);
+    const cacheKey = `${game}::${normalizedSetId}::${normalizedSetName}`;
     const cachedSet = resolvedSetCache.get(cacheKey);
 
     if (cachedSet && cachedSet.expiresAt > Date.now()) {
         return cachedSet.set;
     }
 
-    const sets = await requestJustTcg("/v1/sets", {
+    const nameResults = await requestJustTcg("/v1/sets", {
         game: game,
         q: setName
     });
+    const nameMatches = nameResults.filter(function(set) {
+        const normalizedCandidateName = normalizeText(set.name);
+        const normalizedCandidateTitle = normalizeText(getSetTitle(set.name));
 
-    const exactMatches = sets.filter(function(set) {
-        return set.game_id === game &&
-            normalizeText(set.name) === normalizedSetName;
+        return set.game_id === game && (
+            normalizedCandidateName === normalizedSetName ||
+            normalizedCandidateTitle === normalizedSetName ||
+            normalizedCandidateName === normalizedSetId
+        );
     });
 
-    const resolvedSet = exactMatches.length === 1 ? exactMatches[0] : null;
+    if (nameMatches.length === 1) {
+        const resolvedSet = nameMatches[0];
+
+        resolvedSetCache.set(cacheKey, {
+            set: resolvedSet,
+            expiresAt: Date.now() + SET_CACHE_TTL
+        });
+
+        return resolvedSet;
+    }
+
+    let resolvedSet = null;
+
+    if (normalizedSetId) {
+        const idResults = await requestJustTcg("/v1/sets", {
+            game: game,
+            q: setId
+        });
+        const idMatches = idResults.filter(function(set) {
+            const candidateCode = normalizeText(set.name.split(":")[0]);
+
+            return set.game_id === game &&
+                candidateCode === normalizedSetId;
+        });
+
+        if (idMatches.length === 1) {
+            resolvedSet = idMatches[0];
+        }
+    }
 
     resolvedSetCache.set(cacheKey, {
         set: resolvedSet,
@@ -117,6 +159,7 @@ app.get("/api/card-price", async function(req, res) {
     const cardName = req.query.name;
     const cardNumber = req.query.number;
     const setName = req.query.set;
+    const setId = req.query.setId;
     const requestedLanguage = req.query.language || "English";
 
     let language = null;
@@ -148,7 +191,7 @@ app.get("/api/card-price", async function(req, res) {
     let resolvedSet = null;
 
     try {
-        resolvedSet = await resolveJustTcgSet(setName, language.game);
+        resolvedSet = await resolveJustTcgSet(setName, setId, language.game);
 
         if (!resolvedSet) {
             logLookupFailure({
@@ -179,18 +222,32 @@ app.get("/api/card-price", async function(req, res) {
         let matchingCards = [];
 
         for (const number of numberVariants) {
-            const cards = await requestJustTcg("/v1/cards", {
+            const cardQuery = {
                 game: language.game,
                 set: resolvedSet.id,
                 number: number,
-                q: cardName,
                 language: language.canonical
-            });
+            };
+
+            if (language.canonical === "English") {
+                cardQuery.q = cardName;
+            }
+
+            const cards = await requestJustTcg("/v1/cards", cardQuery);
 
             matchingCards = cards.filter(function(card) {
-                return card.set === resolvedSet.id &&
-                    normalizedNumberVariants.has(normalizeCardNumber(card.number)) &&
-                    normalizeText(card.name) === normalizeText(cardName);
+                const matchesSetAndNumber = card.set === resolvedSet.id &&
+                    normalizedNumberVariants.has(normalizeCardNumber(card.number));
+
+                if (language.canonical === "Japanese") {
+                    return matchesSetAndNumber;
+                }
+
+                return matchesSetAndNumber &&
+                    (
+                        normalizeText(card.name) === normalizeText(cardName) ||
+                        normalizeText(card.name) === normalizeText(`${cardName} ${card.number}`)
+                    );
             });
 
             if (matchingCards.length > 0) {

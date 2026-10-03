@@ -374,7 +374,8 @@ export function initializeInventory({
                     cardNumber,
                     tcgdexCard.set.name,
                     language,
-                    fallbackNumber
+                    fallbackNumber,
+                    tcgdexCard.set.id
                 );
 
                 const response = await fetch(priceURL);

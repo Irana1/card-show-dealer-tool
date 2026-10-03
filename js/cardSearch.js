@@ -568,7 +568,8 @@ export function initializeCardSearch(onAddToInventory) {
             cardNumber,
             setName,
             canonicalLanguage,
-            fallbackNumber
+            fallbackNumber,
+            card.set.id
         );
 
         try {

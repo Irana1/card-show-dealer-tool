@@ -32,7 +32,8 @@ export function buildCardPriceUrl(
     number,
     set,
     language = "English",
-    fallbackNumber
+    fallbackNumber,
+    setId
 ) {
     const url = new URL("/api/card-price", API_BASE_URL);
 
@@ -45,6 +46,10 @@ export function buildCardPriceUrl(
 
     if (fallbackNumber) {
         url.searchParams.set("fallbackNumber", fallbackNumber);
+    }
+
+    if (setId) {
+        url.searchParams.set("setId", setId);
     }
 
     return url;
