@@ -1,4 +1,69 @@
 export const API_BASE_URL = "https://card-show-pricing-api.onrender.com";
+const JAPANESE_TEXT_PATTERN =
+    /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
+const TRANSLATION_CACHE_KEY = "cachedJapaneseTranslations";
+
+function getCachedTranslations() {
+    const cachedTranslations = localStorage.getItem(TRANSLATION_CACHE_KEY);
+
+    if (!cachedTranslations) {
+        return {};
+    }
+
+    try {
+        return JSON.parse(cachedTranslations);
+    } catch (error) {
+        console.error("CACHED TRANSLATION DATA ERROR:", error);
+        return {};
+    }
+}
+
+export async function translateJapaneseToEnglish(text) {
+    const sourceText = String(text).trim();
+
+    if (!JAPANESE_TEXT_PATTERN.test(sourceText)) {
+        return sourceText;
+    }
+
+    const cachedTranslations = getCachedTranslations();
+
+    if (typeof cachedTranslations[sourceText] === "string") {
+        return cachedTranslations[sourceText];
+    }
+
+    const url = new URL("https://api.mymemory.translated.net/get");
+
+    url.search = new URLSearchParams({
+        q: sourceText,
+        langpair: "ja|en"
+    });
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error(`Japanese translation failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const translatedText = data.responseData?.translatedText?.trim();
+
+    if (data.responseStatus !== 200 ||
+        !translatedText ||
+        JAPANESE_TEXT_PATTERN.test(translatedText)
+    ) {
+        throw new Error("Japanese translation returned no usable English text.");
+    }
+
+    const latestCachedTranslations = getCachedTranslations();
+
+    latestCachedTranslations[sourceText] = translatedText;
+    localStorage.setItem(
+        TRANSLATION_CACHE_KEY,
+        JSON.stringify(latestCachedTranslations)
+    );
+
+    return translatedText;
+}
 
 export function normalizeCardLanguage(language) {
     if (language == null || language === "" || language === "English" || language === "en") {

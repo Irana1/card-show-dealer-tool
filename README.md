@@ -6,6 +6,11 @@ Card search supports English and Japanese Pokémon cards. Choose the language
 before searching; market price lookups and inventory price updates use the
 matching Pokémon or Pokémon Japan pricing catalog.
 
+When a Japanese card is added to inventory, its card and set names are
+translated to English for display. Successful translations are cached in the
+browser. Adding a Japanese card requires an internet connection for any names
+that have not already been translated.
+
 ## Deploying market pricing for GitHub Pages
 
 GitHub Pages hosts the frontend only. Market prices are fetched by the Express

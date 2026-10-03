@@ -2,7 +2,8 @@ import {
     buildCardPriceUrl,
     getTcgdexCardNumbers,
     getTcgdexLanguage,
-    normalizeCardLanguage
+    normalizeCardLanguage,
+    translateJapaneseToEnglish
 } from "./api.js";
 
 export function initializeCardSearch(onAddToInventory) {
@@ -731,22 +732,74 @@ export function initializeCardSearch(onAddToInventory) {
         );
     });
 
-    addSelectedCardToInventoryButton.addEventListener("click", function() {
-        if (!selectedPokemonCard || selectedMarketPrice === null) {
+    addSelectedCardToInventoryButton.addEventListener("click", async function() {
+        if (!selectedPokemonCard ||
+            selectedMarketPrice === null ||
+            addSelectedCardToInventoryButton.disabled
+        ) {
             return;
         }
 
-        const cardData = {
-            name: `${selectedPokemonCard.name} - ${selectedPokemonCard.set.name} #${selectedPokemonCard.localId}`,
-            marketValue: selectedMarketPrice,
-            tcgdexId: selectedPokemonCard.id,
-            cardSet: selectedPokemonCard.set.name,
-            cardNumber: selectedPokemonCard.localId,
-            language: selectedCardLanguage,
+        const card = selectedPokemonCard;
+        const language = selectedCardLanguage;
+        const marketValue = selectedMarketPrice;
+        const buttonText = addSelectedCardToInventoryButton.textContent;
+
+        addSelectedCardToInventoryButton.disabled = true;
+        addSelectedCardToInventoryButton.textContent = "Translating...";
+
+        let name;
+        let cardSet;
+
+        try {
+            [name, cardSet] = language === "Japanese"
+                ? await Promise.all([
+                    translateJapaneseToEnglish(card.name),
+                    translateJapaneseToEnglish(card.set.name)
+                ])
+                : [card.name, card.set.name];
+        } catch (error) {
+            console.error("JAPANESE CARD TRANSLATION ERROR:", error);
+
+            if (selectedPokemonCard !== card) {
+                return;
+            }
+
+            const existingError =
+                selectedCardContainer.querySelector(
+                    "#selected-card-translation-error"
+                );
+
+            if (existingError) {
+                existingError.remove();
+            }
+
+            const translationError =
+                document.createElement("p");
+
+            translationError.id = "selected-card-translation-error";
+            translationError.textContent =
+                "Unable to translate this Japanese card for inventory. Check your connection and try again.";
+            selectedCardContainer.appendChild(translationError);
+            return;
+        } finally {
+            addSelectedCardToInventoryButton.disabled = false;
+            addSelectedCardToInventoryButton.textContent = buttonText;
+        }
+
+        if (selectedPokemonCard !== card) {
+            return;
+        }
+
+        onAddToInventory({
+            name: `${name} - ${cardSet} #${card.localId}`,
+            marketValue: marketValue,
+            tcgdexId: card.id,
+            cardSet: cardSet,
+            cardNumber: card.localId,
+            language: language,
             condition: priceConditionSelect.value,
             printing: pricePrintingSelect.value
-        };
-
-        onAddToInventory(cardData);
+        });
     });
 }
