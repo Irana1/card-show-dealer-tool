@@ -1,4 +1,8 @@
-import { buildCardPriceUrl } from "./api.js";
+import {
+    buildCardPriceUrl,
+    getTcgdexLanguage,
+    normalizeCardLanguage
+} from "./api.js";
 
 export function initializeCardSearch(onAddToInventory) {
     const cardSearchForm = document.querySelector("#card-search-form");
@@ -38,7 +42,9 @@ export function initializeCardSearch(onAddToInventory) {
     }
 
     function getPriceCacheKey(card, language) {
-        return `${language}::${card.name}::${card.localId}::${card.set.name}`;
+        const canonicalLanguage = normalizeCardLanguage(language);
+
+        return `${canonicalLanguage}::${card.name}::${card.localId}::${card.set.name}`;
     }
 
     function saveCachedPrice(card, language, priceData) {
@@ -62,7 +68,17 @@ export function initializeCardSearch(onAddToInventory) {
 
         const cacheKey = getPriceCacheKey(card, language);
 
-        return cachedPrices[cacheKey] || null;
+        const legacyEnglishCacheKey =
+            `${card.name}::${card.localId}::${card.set.name}`;
+        const previousLanguageCacheKey =
+            `${getTcgdexLanguage(language)}::${legacyEnglishCacheKey}`;
+
+        return cachedPrices[cacheKey] ||
+            cachedPrices[previousLanguageCacheKey] ||
+            (normalizeCardLanguage(language) === "English"
+                ? cachedPrices[legacyEnglishCacheKey]
+                : null) ||
+            null;
     }
 
     function getApiErrorMessage() {
@@ -104,7 +120,7 @@ export function initializeCardSearch(onAddToInventory) {
     }
 
     function getSearchCacheKey(searchTerm, language) {
-        return `${language}::${searchTerm.toLowerCase()}`;
+        return `${normalizeCardLanguage(language)}::${searchTerm.toLowerCase()}`;
     }
 
     function saveCachedSearch(searchTerm, language, cards) {
@@ -126,7 +142,7 @@ export function initializeCardSearch(onAddToInventory) {
     function saveCachedCard(card, language) {
         const cachedCards = getCachedCards();
 
-        cachedCards[`${language}::${card.id}`] = {
+        cachedCards[`${normalizeCardLanguage(language)}::${card.id}`] = {
             card: card,
             cachedAt: new Date().toISOString()
         };
@@ -141,14 +157,30 @@ export function initializeCardSearch(onAddToInventory) {
         const cachedSearches = getCachedSearches();
 
         const cacheKey = getSearchCacheKey(searchTerm, language);
+        const legacyEnglishCacheKey = searchTerm.toLowerCase();
+        const previousLanguageCacheKey =
+            `${getTcgdexLanguage(language)}::${legacyEnglishCacheKey}`;
 
-        return cachedSearches[cacheKey] || null;
+        return cachedSearches[cacheKey] ||
+            cachedSearches[previousLanguageCacheKey] ||
+            (normalizeCardLanguage(language) === "English"
+                ? cachedSearches[legacyEnglishCacheKey]
+                : null) ||
+            null;
     }
 
     function getCachedCard(cardId, language) {
         const cachedCards = getCachedCards();
+        const canonicalLanguage = normalizeCardLanguage(language);
+        const previousLanguageCacheKey =
+            `${getTcgdexLanguage(canonicalLanguage)}::${cardId}`;
 
-        return cachedCards[`${language}::${cardId}`] || null;
+        return cachedCards[`${canonicalLanguage}::${cardId}`] ||
+            cachedCards[previousLanguageCacheKey] ||
+            (canonicalLanguage === "English"
+                ? cachedCards[cardId]
+                : null) ||
+            null;
     }
 
     function showCachedPriceStatus(cachedAt) {
@@ -191,6 +223,8 @@ export function initializeCardSearch(onAddToInventory) {
     }
 
     function renderSearchResults(cards, language, fromCache = false) {
+        const canonicalLanguage = normalizeCardLanguage(language);
+
         cardSearchResults.innerHTML = "";
 
         if (fromCache) {
@@ -238,7 +272,7 @@ export function initializeCardSearch(onAddToInventory) {
             selectCardButton.textContent = "Select Card";
 
             selectCardButton.addEventListener("click", function() {
-                selectPokemonCard(card.id, language);
+                selectPokemonCard(card.id, canonicalLanguage);
             });
 
             cardResultDiv.appendChild(cardNameSpan);
@@ -254,6 +288,7 @@ export function initializeCardSearch(onAddToInventory) {
         cardSearchResults.innerHTML = "";
 
         try {
+            const canonicalLanguage = normalizeCardLanguage(language);
             let nameTerm = searchTerm;
             let cardNumber = null;
 
@@ -272,7 +307,9 @@ export function initializeCardSearch(onAddToInventory) {
                 cardNumber = nameAndNumberMatch[2];
             }
 
-            const searchUrl = new URL(`https://api.tcgdex.net/v2/${language}/cards`);
+            const searchUrl = new URL(
+                `https://api.tcgdex.net/v2/${getTcgdexLanguage(canonicalLanguage)}/cards`
+            );
 
             if (nameTerm) {
                 searchUrl.searchParams.set("name", nameTerm);
@@ -290,13 +327,13 @@ export function initializeCardSearch(onAddToInventory) {
 
             const cards = await response.json();
 
-            saveCachedSearch(searchTerm, language, cards);
+            saveCachedSearch(searchTerm, canonicalLanguage, cards);
 
             for (const card of cards) {
-                saveCachedCard(card, language);
+                saveCachedCard(card, canonicalLanguage);
             }
 
-            renderSearchResults(cards, language);
+            renderSearchResults(cards, canonicalLanguage);
         } catch (error) {
             console.error("CARD SEARCH ERROR:", error);
 
@@ -319,7 +356,7 @@ export function initializeCardSearch(onAddToInventory) {
 
     async function selectPokemonCard(cardId, language) {
         selectedPokemonCard = null;
-        selectedCardLanguage = language;
+        selectedCardLanguage = normalizeCardLanguage(language);
 
         clearSelectedCardPrice();
 
@@ -327,7 +364,7 @@ export function initializeCardSearch(onAddToInventory) {
 
         try {
             const response = await fetch(
-                `https://api.tcgdex.net/v2/${language}/cards/${encodeURIComponent(cardId)}`
+                `https://api.tcgdex.net/v2/${getTcgdexLanguage(selectedCardLanguage)}/cards/${encodeURIComponent(cardId)}`
             );
 
             if (!response.ok) {
@@ -336,17 +373,17 @@ export function initializeCardSearch(onAddToInventory) {
 
             const cardDetails = await response.json();
 
-            saveCachedCard(cardDetails, language);
+            saveCachedCard(cardDetails, selectedCardLanguage);
 
             selectedPokemonCard = cardDetails;
 
             renderSelectedCard(cardDetails);
 
-            fetchCardPrice(selectedPokemonCard, language);
+            fetchCardPrice(selectedPokemonCard, selectedCardLanguage);
         } catch (error) {
             console.error("CARD DETAIL ERROR:", error);
 
-            const cachedCard = getCachedCard(cardId, language);
+            const cachedCard = getCachedCard(cardId, selectedCardLanguage);
 
             if (cachedCard) {
                 selectedPokemonCard = cachedCard.card;
@@ -360,7 +397,7 @@ export function initializeCardSearch(onAddToInventory) {
 
                 selectedCardContainer.appendChild(cachedMessage);
 
-                fetchCardPrice(selectedPokemonCard, language);
+                fetchCardPrice(selectedPokemonCard, selectedCardLanguage);
 
                 return;
             }
@@ -458,6 +495,7 @@ export function initializeCardSearch(onAddToInventory) {
     }
 
     async function fetchCardPrice(card, language) {
+        const canonicalLanguage = normalizeCardLanguage(language);
         const cardName = card.name;
         const cardNumber = card.localId;
         const setName = card.set.name;
@@ -466,7 +504,7 @@ export function initializeCardSearch(onAddToInventory) {
             cardName,
             cardNumber,
             setName,
-            language
+            canonicalLanguage
         );
 
         try {
@@ -482,7 +520,7 @@ export function initializeCardSearch(onAddToInventory) {
                 throw new Error("Invalid price data received.");
             }
 
-            saveCachedPrice(card, language, priceData);
+            saveCachedPrice(card, canonicalLanguage, priceData);
 
             selectedCardPriceData = priceData;
             selectedPriceIsCached = false;
@@ -492,7 +530,7 @@ export function initializeCardSearch(onAddToInventory) {
         } catch (error) {
             console.error("PRICE FETCH ERROR:", error);
 
-            const cachedPrice = getCachedPrice(card, language);
+            const cachedPrice = getCachedPrice(card, canonicalLanguage);
 
             if (cachedPrice) {
                 selectedCardPriceData = cachedPrice.priceData;
@@ -607,7 +645,10 @@ export function initializeCardSearch(onAddToInventory) {
             return;
         }
 
-        searchPokemonCards(searchTerm, cardSearchLanguageSelect.value);
+        searchPokemonCards(
+            searchTerm,
+            normalizeCardLanguage(cardSearchLanguageSelect.value)
+        );
     });
 
     addSelectedCardToInventoryButton.addEventListener("click", function() {

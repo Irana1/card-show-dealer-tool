@@ -1,3 +1,5 @@
+import { normalizeCardLanguage } from "./api.js";
+
 export function initializeSettings(applyCalculatorSettings) {
     const settingsForm = document.querySelector("#settings-form");
     const defaultBuyPercentageInput = document.querySelector("#default-buy-pct");
@@ -158,6 +160,27 @@ export function initializeSettings(applyCalculatorSettings) {
                 }
             }
 
+            let normalizedInventoryBackup = null;
+
+            if (backup.data.inventoryCards !== null) {
+                const inventoryCards = JSON.parse(backup.data.inventoryCards);
+
+                if (Array.isArray(inventoryCards)) {
+                    normalizedInventoryBackup = JSON.stringify(
+                        inventoryCards.map((card) => {
+                            if (!card || typeof card !== "object" || Array.isArray(card)) {
+                                return card;
+                            }
+
+                            return {
+                                ...card,
+                                language: normalizeCardLanguage(card.language)
+                            };
+                        })
+                    );
+                }
+            }
+
             const confirmed = confirm("Importing this backup will replace your current saved data. Continue?");
 
             if (!confirmed) {
@@ -170,6 +193,8 @@ export function initializeSettings(applyCalculatorSettings) {
 
                 if (value === null) {
                     localStorage.removeItem(key);
+                } else if (key === "inventoryCards" && normalizedInventoryBackup !== null) {
+                    localStorage.setItem(key, normalizedInventoryBackup);
                 } else {
                     localStorage.setItem(key, value);
                 }

@@ -21,12 +21,15 @@ app.get("/api/card-price", async function(req, res) {
     const cardName = req.query.name;
     const cardNumber = req.query.number;
     const setName = req.query.set;
-    const language = req.query.language || "en";
+    const requestedLanguage = req.query.language || "English";
 
-    const game = {
-        en: "pokemon",
-        ja: "pokemon-japan"
-    }[language];
+    let language = null;
+
+    if (requestedLanguage === "English" || requestedLanguage === "en") {
+        language = { canonical: "English", game: "pokemon" };
+    } else if (requestedLanguage === "Japanese" || requestedLanguage === "ja") {
+        language = { canonical: "Japanese", game: "pokemon-japan" };
+    }
 
     if (!cardName || !cardNumber || !setName) {
         return res.status(400).json({
@@ -34,9 +37,9 @@ app.get("/api/card-price", async function(req, res) {
         });
     }
 
-    if (!game) {
+    if (!language) {
         return res.status(400).json({
-            error: "Language must be en or ja"
+            error: "Language must be English or Japanese"
         });
     }
 
@@ -46,44 +49,64 @@ app.get("/api/card-price", async function(req, res) {
         });
     }
     
-    const justTCGurl = 
-        `https://api.justtcg.com/v1/cards?q=${encodeURIComponent(cardName)}&number=${encodeURIComponent(cardNumber)}&game=${game}`;
-
-    const response = await fetch(justTCGurl, {
-        headers: {
-            "x-api-key": JUSTTCG_API_KEY
-        }
-    });
-
-    const data = await response.json();
-
-    let matchingCard = null;
-
-    if (data.data.length === 1) {
-        matchingCard = data.data[0];
-    } else {
-        matchingCard = data.data.find(function(card) {
-            return card.set_name.toLowerCase() === setName.toLowerCase();
+    try {
+        const justTCGurl = new URL("https://api.justtcg.com/v1/cards");
+        justTCGurl.search = new URLSearchParams({
+            q: cardName,
+            number: cardNumber,
+            game: language.game
         });
 
-        if (!matchingCard) {
-            const nameMatches = data.data.filter(function(card) {
-                return card.name.toLowerCase().startsWith(cardName.toLowerCase());
+        const response = await fetch(justTCGurl, {
+            headers: {
+                "x-api-key": JUSTTCG_API_KEY
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`JustTCG request failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!data || !Array.isArray(data.data)) {
+            throw new Error("JustTCG returned an invalid card-price response.");
+        }
+
+        let matchingCard = null;
+
+        if (data.data.length === 1) {
+            matchingCard = data.data[0];
+        } else {
+            matchingCard = data.data.find(function(card) {
+                return card.set_name?.toLowerCase() === setName.toLowerCase();
             });
 
-            if (nameMatches.length === 1) {
-                matchingCard = nameMatches[0];
+            if (!matchingCard) {
+                const nameMatches = data.data.filter(function(card) {
+                    return card.name?.toLowerCase().startsWith(cardName.toLowerCase());
+                });
+
+                if (nameMatches.length === 1) {
+                    matchingCard = nameMatches[0];
+                }
             }
         }
-    }
 
-    if (!matchingCard) {
-        return res.status(404).json({
-            error: "Matching card not found"
+        if (!matchingCard) {
+            return res.status(404).json({
+                error: `Matching ${language.canonical} card not found`
+            });
+        }
+
+        return res.json(matchingCard);
+    } catch (error) {
+        console.error("CARD PRICE LOOKUP FAILED:", error);
+
+        return res.status(502).json({
+            error: `Unable to retrieve ${language.canonical} card pricing`
         });
     }
-
-    res.json(matchingCard)
 });
 
 app.listen(PORT, function() {

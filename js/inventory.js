@@ -1,4 +1,8 @@
-import { buildCardPriceUrl } from "./api.js";
+import {
+    buildCardPriceUrl,
+    getTcgdexLanguage,
+    normalizeCardLanguage
+} from "./api.js";
 
 export function initializeInventory({
     onSalesInventoryChanged,
@@ -45,11 +49,43 @@ export function initializeInventory({
         return selectedOption ? selectedOption.textContent : value;
     }
 
+    function getInventoryCardLanguage(card) {
+        if (card.language == null || card.language === "" ||
+            card.language === "English" || card.language === "en"
+        ) {
+            return "English";
+        }
+
+        if (card.language === "Japanese" || card.language === "ja") {
+            return "Japanese";
+        }
+
+        return "Unknown";
+    }
+
     function loadSavedInventory() {
         const savedInventoryCards = localStorage.getItem("inventoryCards");
         if (savedInventoryCards) {
             const inventoryCardsParsed = JSON.parse(savedInventoryCards);
-            inventoryCards = inventoryCardsParsed;
+            inventoryCards = inventoryCardsParsed.map((card) => {
+                if (!card || typeof card !== "object" || Array.isArray(card)) {
+                    return card;
+                }
+
+                try {
+                    return {
+                        ...card,
+                        language: normalizeCardLanguage(card.language)
+                    };
+                } catch (error) {
+                    console.error(
+                        `INVALID INVENTORY CARD LANGUAGE FOR ${card.name}:`,
+                        error
+                    );
+
+                    return card;
+                }
+            });
         }
     }
 
@@ -210,6 +246,15 @@ export function initializeInventory({
             inventoryNotesSpan.classList.add("inventory-card-value");
             inventoryCardInfoDiv.appendChild(inventoryNotesLabel);
             inventoryCardInfoDiv.appendChild(inventoryNotesSpan);
+
+            const inventoryLanguageLabel = document.createElement("span");
+            inventoryLanguageLabel.textContent = "Language: ";
+            inventoryLanguageLabel.classList.add("inventory-card-label");
+            const inventoryLanguageSpan = document.createElement("span");
+            inventoryLanguageSpan.textContent = getInventoryCardLanguage(card);
+            inventoryLanguageSpan.classList.add("inventory-card-value");
+            inventoryCardInfoDiv.appendChild(inventoryLanguageLabel);
+            inventoryCardInfoDiv.appendChild(inventoryLanguageSpan);
             
             const inventoryCardActions = document.createElement("div");
             inventoryCardActions.classList.add("inventory-card-actions");
@@ -308,8 +353,9 @@ export function initializeInventory({
             }
 
             try {
+                const language = normalizeCardLanguage(card.language);
                 const tcgdexResponse = await fetch(
-                    `https://api.tcgdex.net/v2/${card.language ?? "en"}/cards/${encodeURIComponent(card.tcgdexId)}`
+                    `https://api.tcgdex.net/v2/${getTcgdexLanguage(language)}/cards/${encodeURIComponent(card.tcgdexId)}`
                 );
 
                 if (!tcgdexResponse.ok) {
@@ -324,7 +370,7 @@ export function initializeInventory({
                     tcgdexCard.name,
                     tcgdexCard.localId,
                     tcgdexCard.set.name,
-                    card.language ?? "en"
+                    language
                 );
 
                 const response = await fetch(priceURL);
@@ -553,7 +599,7 @@ export function initializeInventory({
             tcgdexId: cardData.tcgdexId,
             cardSet: cardData.cardSet,
             cardNumber: cardData.cardNumber,
-            language: cardData.language ?? "en",
+            language: normalizeCardLanguage(cardData.language),
             condition: cardData.condition,
             printing: cardData.printing
         };
@@ -625,10 +671,10 @@ export function initializeInventory({
                 pendingInventoryCardData?.cardNumber ??
                 existingInventoryCard?.cardNumber ??
                 null,
-            language:
+            language: normalizeCardLanguage(
                 pendingInventoryCardData?.language ??
-                existingInventoryCard?.language ??
-                "en",
+                existingInventoryCard?.language
+            ),
             condition: 
                 pendingInventoryCardData?.condition ??
                 existingInventoryCard?.condition ??
@@ -707,7 +753,10 @@ export function initializeInventory({
         },
 
         addInventoryCard(card) {
-            inventoryCards.push(card);
+            inventoryCards.push({
+                ...card,
+                language: normalizeCardLanguage(card.language)
+            });
 
             localStorage.setItem("inventoryCards", JSON.stringify(inventoryCards));
         },
