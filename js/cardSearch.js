@@ -2,8 +2,8 @@ import {
     buildCardPriceUrl,
     getTcgdexCardNumbers,
     getTcgdexLanguage,
-    normalizeCardLanguage,
-    translateJapaneseToEnglish
+    getEnglishCardCounterpart,
+    normalizeCardLanguage
 } from "./api.js";
 
 export function initializeCardSearch(onAddToInventory) {
@@ -744,44 +744,30 @@ export function initializeCardSearch(onAddToInventory) {
         const language = selectedCardLanguage;
         const marketValue = selectedMarketPrice;
         const buttonText = addSelectedCardToInventoryButton.textContent;
+        let name = card.name;
+        let cardSet = card.set.name;
 
         addSelectedCardToInventoryButton.disabled = true;
-        addSelectedCardToInventoryButton.textContent = "Translating...";
-
-        let name;
-        let cardSet;
+        addSelectedCardToInventoryButton.textContent =
+            language === "Japanese"
+                ? "Finding English counterpart..."
+                : buttonText;
 
         try {
-            [name, cardSet] = language === "Japanese"
-                ? await Promise.all([
-                    translateJapaneseToEnglish(card.name),
-                    translateJapaneseToEnglish(card.set.name)
-                ])
-                : [card.name, card.set.name];
+            if (language === "Japanese") {
+                const counterpart = await getEnglishCardCounterpart(card);
+
+                if (counterpart) {
+                    name = counterpart.name ?? name;
+                    cardSet = counterpart.set ?? cardSet;
+                }
+            }
         } catch (error) {
-            console.error("JAPANESE CARD TRANSLATION ERROR:", error);
+            console.error("ENGLISH CARD COUNTERPART LOOKUP ERROR:", error);
 
             if (selectedPokemonCard !== card) {
                 return;
             }
-
-            const existingError =
-                selectedCardContainer.querySelector(
-                    "#selected-card-translation-error"
-                );
-
-            if (existingError) {
-                existingError.remove();
-            }
-
-            const translationError =
-                document.createElement("p");
-
-            translationError.id = "selected-card-translation-error";
-            translationError.textContent =
-                "Unable to translate this Japanese card for inventory. Check your connection and try again.";
-            selectedCardContainer.appendChild(translationError);
-            return;
         } finally {
             addSelectedCardToInventoryButton.disabled = false;
             addSelectedCardToInventoryButton.textContent = buttonText;
