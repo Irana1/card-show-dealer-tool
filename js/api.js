@@ -140,13 +140,57 @@ export function getTcgdexCardNumbers(card) {
     return [localId];
 }
 
+export function getTcgdexCardImageUrl(card, language = "English") {
+    if (card.image) {
+        return `${card.image}/low.webp`;
+    }
+
+    const separatorIndex = typeof card.id === "string"
+        ? card.id.lastIndexOf("-")
+        : -1;
+    const setId = (card.set?.id ??
+        (separatorIndex > 0 ? card.id.slice(0, separatorIndex) : ""));
+    const normalizedSetId = typeof setId === "string"
+        ? setId.toLowerCase()
+        : "";
+
+    if (!normalizedSetId.endsWith("p") || card.localId == null) {
+        return null;
+    }
+
+    const seriesId = normalizedSetId.endsWith("-p")
+        ? normalizedSetId.slice(0, -2)
+        : normalizedSetId.slice(0, -1);
+
+    return `https://assets.tcgdex.net/${getTcgdexLanguage(language)}/${encodeURIComponent(seriesId)}/${encodeURIComponent(normalizedSetId)}/${encodeURIComponent(card.localId)}/low.webp`;
+}
+
+export function getTcgdexTcgplayerId(card) {
+    if (!Array.isArray(card.variants_detailed)) {
+        return null;
+    }
+
+    for (const variant of card.variants_detailed) {
+        const tcgplayerId = variant.thirdParty?.tcgplayer;
+
+        if ((typeof tcgplayerId === "number" && Number.isInteger(tcgplayerId)) ||
+            (typeof tcgplayerId === "string" && /^\d+$/.test(tcgplayerId))
+        ) {
+            return String(tcgplayerId);
+        }
+    }
+
+    return null;
+}
+
 export function buildCardPriceUrl(
     name,
     number,
     set,
     language = "English",
     fallbackNumber,
-    setId
+    setId,
+    tcgplayerId
 ) {
     const url = new URL("/api/card-price", API_BASE_URL);
 
@@ -163,6 +207,10 @@ export function buildCardPriceUrl(
 
     if (setId) {
         url.searchParams.set("setId", setId);
+    }
+
+    if (tcgplayerId) {
+        url.searchParams.set("tcgplayerId", tcgplayerId);
     }
 
     return url;

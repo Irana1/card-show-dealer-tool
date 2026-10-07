@@ -10,6 +10,11 @@ When a Japanese card is added to inventory, its card and set names use the
 official English counterpart when TCGdex can match it confidently. Japanese
 names are kept when a matching English counterpart cannot be verified.
 
+Promo cards use their TCGplayer product ID for market-price lookup when TCGdex
+provides one, avoiding reliance on promo set names and numbering conventions.
+If a promo card record has no image URL, the app tries the corresponding TCGdex
+promo image asset.
+
 ## Deploying market pricing for GitHub Pages
 
 GitHub Pages hosts the frontend only. Market prices are fetched by the Express

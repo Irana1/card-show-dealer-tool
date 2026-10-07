@@ -1,7 +1,9 @@
 import {
     buildCardPriceUrl,
     getTcgdexCardNumbers,
+    getTcgdexCardImageUrl,
     getTcgdexLanguage,
+    getTcgdexTcgplayerId,
     getEnglishCardCounterpart,
     normalizeCardLanguage
 } from "./api.js";
@@ -27,6 +29,22 @@ export function initializeCardSearch(onAddToInventory) {
     let selectedMarketPrice = null;
     let selectedPriceIsCached = false;
     let selectedPriceCachedAt = null;
+
+    function setCardImage(img, card, language) {
+        img.alt = `${card.name} card`;
+
+        const imageUrl = getTcgdexCardImageUrl(card, language);
+
+        if (!imageUrl) {
+            img.hidden = true;
+            return;
+        }
+
+        img.src = imageUrl;
+        img.addEventListener("error", function() {
+            img.hidden = true;
+        }, { once: true });
+    }
 
     function getCachedPrices() {
         const cachedPrices = localStorage.getItem(PRICE_CACHE_KEY);
@@ -285,10 +303,7 @@ export function initializeCardSearch(onAddToInventory) {
 
             const cardImage = document.createElement("img");
 
-            if (card.image) {
-                cardImage.src = `${card.image}/low.webp`;
-                cardImage.alt = `${card.name} card`;
-            }
+            setCardImage(cardImage, card, canonicalLanguage);
 
             const cardNameSpan = document.createElement("span");
             cardNameSpan.textContent = `${cardName}`;
@@ -489,10 +504,7 @@ export function initializeCardSearch(onAddToInventory) {
 
         const selectedCardImage = document.createElement("img");
 
-        if (card.image) {
-            selectedCardImage.src = `${card.image}/low.webp`;
-            selectedCardImage.alt = `${card.name} card`;
-        }
+        setCardImage(selectedCardImage, card, selectedCardLanguage);
 
         selectedCardImage.classList.add("selected-card-image");
 
@@ -570,7 +582,8 @@ export function initializeCardSearch(onAddToInventory) {
             setName,
             canonicalLanguage,
             fallbackNumber,
-            card.set.id
+            card.set.id,
+            getTcgdexTcgplayerId(card)
         );
 
         try {

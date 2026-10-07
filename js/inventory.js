@@ -2,6 +2,7 @@ import {
     buildCardPriceUrl,
     getTcgdexCardNumbers,
     getTcgdexLanguage,
+    getTcgdexTcgplayerId,
     normalizeCardLanguage
 } from "./api.js";
 
@@ -375,7 +376,8 @@ export function initializeInventory({
                     tcgdexCard.set.name,
                     language,
                     fallbackNumber,
-                    tcgdexCard.set.id
+                    tcgdexCard.set.id,
+                    getTcgdexTcgplayerId(tcgdexCard)
                 );
 
                 const response = await fetch(priceURL);

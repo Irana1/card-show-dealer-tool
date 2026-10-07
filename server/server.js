@@ -160,6 +160,7 @@ app.get("/api/card-price", async function(req, res) {
     const cardNumber = req.query.number;
     const setName = req.query.set;
     const setId = req.query.setId;
+    const tcgplayerId = req.query.tcgplayerId;
     const requestedLanguage = req.query.language || "English";
 
     let language = null;
@@ -191,67 +192,81 @@ app.get("/api/card-price", async function(req, res) {
     let resolvedSet = null;
 
     try {
-        resolvedSet = await resolveJustTcgSet(setName, setId, language.game);
-
-        if (!resolvedSet) {
-            logLookupFailure({
-                language: language.canonical,
-                game: language.game,
-                name: cardName,
-                number: cardNumber,
-                tcgdexSet: setName,
-                reason: "no exact JustTCG set match"
-            });
-
-            return res.status(404).json({
-                code: "CARD_NOT_FOUND",
-                error: "Matching card set not found."
-            });
-        }
-
-        const numberVariants = [cardNumber];
-        if (req.query.fallbackNumber &&
-            normalizeCardNumber(req.query.fallbackNumber) !== normalizeCardNumber(cardNumber)
-        ) {
-            numberVariants.push(req.query.fallbackNumber);
-        }
-        const normalizedNumberVariants = new Set(
-            numberVariants.map(normalizeCardNumber)
-        );
-
         let matchingCards = [];
 
-        for (const number of numberVariants) {
-            const cardQuery = {
+        if (tcgplayerId) {
+            const cards = await requestJustTcg("/v1/cards", {
                 game: language.game,
-                set: resolvedSet.id,
-                number: number,
+                tcgplayerId: tcgplayerId,
                 language: language.canonical
-            };
-
-            if (language.canonical === "English") {
-                cardQuery.q = cardName;
-            }
-
-            const cards = await requestJustTcg("/v1/cards", cardQuery);
-
-            matchingCards = cards.filter(function(card) {
-                const matchesSetAndNumber = card.set === resolvedSet.id &&
-                    normalizedNumberVariants.has(normalizeCardNumber(card.number));
-
-                if (language.canonical === "Japanese") {
-                    return matchesSetAndNumber;
-                }
-
-                return matchesSetAndNumber &&
-                    (
-                        normalizeText(card.name) === normalizeText(cardName) ||
-                        normalizeText(card.name) === normalizeText(`${cardName} ${card.number}`)
-                    );
             });
 
-            if (matchingCards.length > 0) {
-                break;
+            matchingCards = cards.filter(function(card) {
+                return String(card.tcgplayerId) === String(tcgplayerId);
+            });
+        }
+
+        if (matchingCards.length !== 1) {
+            resolvedSet = await resolveJustTcgSet(setName, setId, language.game);
+
+            if (!resolvedSet) {
+                logLookupFailure({
+                    language: language.canonical,
+                    game: language.game,
+                    name: cardName,
+                    number: cardNumber,
+                    tcgdexSet: setName,
+                    reason: "no exact JustTCG set match"
+                });
+
+                return res.status(404).json({
+                    code: "CARD_NOT_FOUND",
+                    error: "Matching card set not found."
+                });
+            }
+
+            const numberVariants = [cardNumber];
+            if (req.query.fallbackNumber &&
+                normalizeCardNumber(req.query.fallbackNumber) !== normalizeCardNumber(cardNumber)
+            ) {
+                numberVariants.push(req.query.fallbackNumber);
+            }
+            const normalizedNumberVariants = new Set(
+                numberVariants.map(normalizeCardNumber)
+            );
+
+            for (const number of numberVariants) {
+                const cardQuery = {
+                    game: language.game,
+                    set: resolvedSet.id,
+                    number: number,
+                    language: language.canonical
+                };
+
+                if (language.canonical === "English") {
+                    cardQuery.q = cardName;
+                }
+
+                const cards = await requestJustTcg("/v1/cards", cardQuery);
+
+                matchingCards = cards.filter(function(card) {
+                    const matchesSetAndNumber = card.set === resolvedSet.id &&
+                        normalizedNumberVariants.has(normalizeCardNumber(card.number));
+
+                    if (language.canonical === "Japanese") {
+                        return matchesSetAndNumber;
+                    }
+
+                    return matchesSetAndNumber &&
+                        (
+                            normalizeText(card.name) === normalizeText(cardName) ||
+                            normalizeText(card.name) === normalizeText(`${cardName} ${card.number}`)
+                        );
+                });
+
+                if (matchingCards.length > 0) {
+                    break;
+                }
             }
         }
 
@@ -262,7 +277,7 @@ app.get("/api/card-price", async function(req, res) {
                 name: cardName,
                 number: cardNumber,
                 tcgdexSet: setName,
-                resolvedSet: resolvedSet.id,
+                resolvedSet: resolvedSet?.id,
                 reason: matchingCards.length > 1
                     ? "multiple cards matched the full identity"
                     : "no card matched the exact set, number, and name"
@@ -300,7 +315,7 @@ app.get("/api/card-price", async function(req, res) {
                 name: cardName,
                 number: cardNumber,
                 tcgdexSet: setName,
-                resolvedSet: resolvedSet.id,
+                resolvedSet: resolvedSet?.id,
                 reason: "card matched but no priced variants exist for the requested language"
             });
 
@@ -332,6 +347,10 @@ app.get("/api/card-price", async function(req, res) {
     }
 });
 
-app.listen(PORT, function() {
-    console.log(`Server running on port ${PORT}`);
-});
+if (require.main === module) {
+    app.listen(PORT, function() {
+        console.log(`Server running on port ${PORT}`);
+    });
+}
+
+module.exports = app;
